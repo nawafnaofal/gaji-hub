@@ -14,6 +14,22 @@ export default function Dashboard() {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const [stream, setStream] = useState(null);
+    const [distance, setDistance] = useState(null);
+
+    const calculateDistance = (lat1, lon1, lat2, lon2) => {
+        const R = 6371e3; // metres
+        const φ1 = lat1 * Math.PI/180;
+        const φ2 = lat2 * Math.PI/180;
+        const Δφ = (lat2-lat1) * Math.PI/180;
+        const Δλ = (lon2-lon1) * Math.PI/180;
+
+        const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ/2) * Math.sin(Δλ/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+        return R * c; // in metres
+    };
 
     const fetchStats = () => {
         axios.get('/api/v1/dashboard/stats')
@@ -35,9 +51,18 @@ export default function Dashboard() {
         try {
             const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
             setStream(mediaStream);
+            
+            // Check location immediately
+            const loc = await getLocation();
+            setLocation(loc);
+            
+            if (stats?.geofencing) {
+                const dist = calculateDistance(loc.latitude, loc.longitude, stats.geofencing.latitude, stats.geofencing.longitude);
+                setDistance(dist);
+            }
         } catch (err) {
-            console.error("Error accessing camera", err);
-            toast.error("Gagal mengakses kamera. Pastikan izin kamera diberikan.");
+            console.error("Error accessing camera/location", err);
+            toast.error("Gagal mengakses kamera atau lokasi. Pastikan izin diberikan.");
         }
     };
 
@@ -185,11 +210,19 @@ export default function Dashboard() {
                                             <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg flex flex-col items-center">
                                                 {!stream ? (
                                                     <button onClick={startCamera} className="bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 px-4 py-2 rounded flex items-center gap-2 mb-2">
-                                                        <Camera size={20} /> Nyalakan Kamera untuk Absen
+                                                        <Camera size={20} /> Nyalakan Kamera & Cek Lokasi
                                                     </button>
                                                 ) : (
                                                     <div className="relative w-full max-w-sm aspect-video bg-black rounded overflow-hidden">
                                                         <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover"></video>
+                                                    </div>
+                                                )}
+                                                
+                                                {distance !== null && stats?.geofencing && (
+                                                    <div className={`mt-3 px-3 py-1.5 rounded-full text-xs font-semibold ${distance <= stats.geofencing.radius ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                                        {distance <= stats.geofencing.radius 
+                                                            ? `✓ Anda berada di area kantor (${Math.round(distance)}m)` 
+                                                            : `✗ Anda di luar jangkauan (${Math.round(distance)}m / Maks ${stats.geofencing.radius}m)`}
                                                     </div>
                                                 )}
                                                 <p className="text-xs text-gray-500 mt-2">*Kamera dan Lokasi (GPS) wajib aktif untuk Clock In.</p>
@@ -201,8 +234,8 @@ export default function Dashboard() {
                                     <div className="flex gap-4">
                                         <button 
                                             onClick={handleClockIn}
-                                            disabled={stats.has_clocked_in || !stream}
-                                            className={`px-6 py-3 rounded-lg font-semibold shadow-sm transition flex items-center gap-2 ${(stats.has_clocked_in || !stream) ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+                                            disabled={stats.has_clocked_in || !stream || (distance !== null && stats?.geofencing && distance > stats.geofencing.radius)}
+                                            className={`px-6 py-3 rounded-lg font-semibold shadow-sm transition flex items-center gap-2 ${(stats.has_clocked_in || !stream || (distance !== null && stats?.geofencing && distance > stats.geofencing.radius)) ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
                                         >
                                             <Clock size={18} /> Clock In (Masuk)
                                         </button>

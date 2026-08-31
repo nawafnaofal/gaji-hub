@@ -149,6 +149,7 @@ Route::middleware('auth')->prefix('api/v1')->group(function () {
         Route::get('/payrolls', [\App\Http\Controllers\Api\PayrollController::class, 'index']);
         Route::get('/payrolls/export', [\App\Http\Controllers\Api\PayrollController::class, 'exportCsv']);
         Route::post('/payrolls/generate', [\App\Http\Controllers\Api\PayrollController::class, 'generate']);
+        Route::post('/payrolls/{id}/approve', [\App\Http\Controllers\Api\PayrollController::class, 'approve']);
         Route::post('/payrolls/{id}/disburse', [\App\Http\Controllers\Api\PayrollController::class, 'disburse']);
         Route::get('/dashboard/stats', [\App\Http\Controllers\Api\DashboardController::class, 'stats']);
 

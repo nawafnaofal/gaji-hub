@@ -51,6 +51,18 @@ export default function PayrollIndex({ auth }) {
         }
     };
 
+    const handleApprove = async (id) => {
+        if (!confirm('Anda yakin ingin menyetujui payroll ini?')) return;
+        
+        try {
+            await axios.post(`/api/v1/payrolls/${id}/approve`);
+            fetchPayrolls();
+            alert('Payroll berhasil disetujui!');
+        } catch (error) {
+            alert('Gagal menyetujui payroll.');
+        }
+    };
+
     const handleDisburse = async (id) => {
         if (!confirm('Anda yakin ingin mencairkan dana (transfer) untuk payroll ini?')) return;
         
@@ -141,6 +153,9 @@ export default function PayrollIndex({ auth }) {
                                                             </span>
                                                         </td>
                                                         <td className="p-4 text-center space-x-2">
+                                                            {item.status === 'draft' && auth.user?.role !== 'employee' && (
+                                                                <button onClick={() => handleApprove(item.id)} className="text-yellow-500 hover:text-yellow-700 text-sm font-medium mr-2">Approve</button>
+                                                            )}
                                                             {item.status === 'approved' && auth.user?.role !== 'employee' && (
                                                                 <button onClick={() => handleDisburse(item.id)} className="text-green-500 hover:text-green-700 text-sm font-medium mr-2">Disburse</button>
                                                             )}

@@ -23,12 +23,15 @@ class EmployeeController extends Controller
     {
         DB::beginTransaction();
         try {
+            $role = $request->role ?? 'employee';
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
                 'password' => Hash::make('password123'), // Default password
-                'role' => 'employee'
+                'role' => $role
             ]);
+            
+            $user->assignRole($role);
 
             $employee = Employee::create([
                 'user_id' => $user->id,
@@ -72,10 +75,14 @@ class EmployeeController extends Controller
             $employee = Employee::findOrFail($id);
             $user = $employee->user;
 
+            $role = $request->role ?? $user->role;
             $user->update([
                 'name' => $request->name,
                 'email' => $request->email,
+                'role' => $role
             ]);
+            
+            $user->syncRoles([$role]);
 
             $employee->update([
                 'department_id' => $request->department_id,

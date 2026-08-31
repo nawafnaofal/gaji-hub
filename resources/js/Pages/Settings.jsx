@@ -13,8 +13,8 @@ export default function Settings({ auth }) {
         bpjs_ketenagakerjaan_rate: '2',
         late_penalty: '50000',
         absence_penalty: '100000',
-        office_latitude: '-6.200000',
-        office_longitude: '106.816666',
+        office_latitude: '-6.151595380868531',
+        office_longitude: '106.77652147472021',
         office_radius: '50'
     });
     
@@ -145,11 +145,11 @@ export default function Settings({ auth }) {
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         <div>
                                             <label className="block text-sm font-medium mb-1">Latitude Kantor</label>
-                                            <input type="text" name="office_latitude" value={settings.office_latitude || ''} onChange={handleChange} className="w-full rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-blue-500 text-sm" placeholder="Contoh: -6.200000" />
+                                            <input type="text" name="office_latitude" value={settings.office_latitude || ''} onChange={handleChange} className="w-full rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-blue-500 text-sm" placeholder="Contoh: -6.1515953" />
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium mb-1">Longitude Kantor</label>
-                                            <input type="text" name="office_longitude" value={settings.office_longitude || ''} onChange={handleChange} className="w-full rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-blue-500 text-sm" placeholder="Contoh: 106.816666" />
+                                            <input type="text" name="office_longitude" value={settings.office_longitude || ''} onChange={handleChange} className="w-full rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-blue-500 text-sm" placeholder="Contoh: 106.7765214" />
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium mb-1">Radius Toleransi (Meter)</label>

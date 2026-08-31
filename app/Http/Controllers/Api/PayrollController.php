@@ -325,6 +325,21 @@ class PayrollController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
+    public function approve($id)
+    {
+        $payroll = Payroll::findOrFail($id);
+        
+        if ($payroll->status !== 'draft') {
+            return response()->json(['success' => false, 'message' => 'Payroll cannot be approved from this status.'], 400);
+        }
+        
+        $payroll->update([
+            'status' => 'approved',
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Payroll berhasil disetujui (Approved).', 'data' => $payroll]);
+    }
+
     public function disburse($id)
     {
         $payroll = Payroll::findOrFail($id);

@@ -44,6 +44,7 @@ class EmployeeRequest extends FormRequest
             'phone' => 'nullable|string|max:255',
             'address' => 'nullable|string',
             'annual_leave_quota' => 'nullable|integer|min:0',
+            'role' => 'nullable|in:admin,hr,manager,employee',
             'manager_id' => 'nullable|exists:employees,id',
             'tax_status' => 'nullable|string|in:TK/0,TK/1,TK/2,TK/3,K/0,K/1,K/2,K/3',
             'resign_date' => 'nullable|date',

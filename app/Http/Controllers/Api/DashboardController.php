@@ -33,6 +33,10 @@ class DashboardController extends Controller
                 ->limit(5)
                 ->get();
                 
+            $officeLat = \App\Models\CompanySetting::where('key', 'office_latitude')->value('value') ?: -6.151595380868531;
+            $officeLng = \App\Models\CompanySetting::where('key', 'office_longitude')->value('value') ?: 106.77652147472021;
+            $officeRadius = \App\Models\CompanySetting::where('key', 'office_radius')->value('value') ?: 50;
+                
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -44,6 +48,11 @@ class DashboardController extends Controller
                     'has_clocked_in' => $hasClockedIn,
                     'has_clocked_out' => $hasClockedOut,
                     'announcements' => $announcements,
+                    'geofencing' => [
+                        'latitude' => (float) $officeLat,
+                        'longitude' => (float) $officeLng,
+                        'radius' => (int) $officeRadius
+                    ]
                 ]
             ]);
         }

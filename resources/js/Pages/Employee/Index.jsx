@@ -34,7 +34,8 @@ export default function EmployeeIndex({ auth }) {
         manager_id: '',
         tax_status: 'TK/0',
         resign_date: '',
-        termination_reason: ''
+        termination_reason: '',
+        role: 'employee'
     });
 
     useEffect(() => {
@@ -62,7 +63,7 @@ export default function EmployeeIndex({ auth }) {
             name: '', email: '', department_id: '', employee_code: '', basic_salary: '', join_date: '',
             job_title: '', employment_status: '', bank_name: '', bank_account: '', npwp_number: '',
             bpjs_kesehatan: '', bpjs_ketenagakerjaan: '', phone: '', address: '', manager_id: '', tax_status: 'TK/0',
-            resign_date: '', termination_reason: ''
+            resign_date: '', termination_reason: '', role: 'employee'
         });
         setErrors({});
         setShowModal(true);
@@ -90,7 +91,8 @@ export default function EmployeeIndex({ auth }) {
             manager_id: emp.manager_id || '',
             tax_status: emp.tax_status || 'TK/0',
             resign_date: emp.resign_date || '',
-            termination_reason: emp.termination_reason || ''
+            termination_reason: emp.termination_reason || '',
+            role: emp.user?.role || 'employee'
         });
         setErrors({});
         setShowModal(true);
@@ -351,6 +353,16 @@ export default function EmployeeIndex({ auth }) {
                             )}
 
                             <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role Sistem</label>
+                                    <select name="role" value={formData.role} onChange={handleInputChange} className="w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="employee">Karyawan (Employee)</option>
+                                        <option value="manager">Manajer (Manager)</option>
+                                        <option value="hr">HRD (HR)</option>
+                                        <option value="admin">Administrator (Admin)</option>
+                                    </select>
+                                    {errors.role && <p className="text-red-500 text-xs mt-1">{errors.role[0]}</p>}
+                                </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Manajer Langsung</label>
                                     <select name="manager_id" value={formData.manager_id} onChange={handleInputChange} className="w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
