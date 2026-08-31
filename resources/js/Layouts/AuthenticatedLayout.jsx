@@ -6,7 +6,7 @@ import {
     Sun, Moon, Bell, Menu, X, 
     LayoutDashboard, Megaphone, Users, CalendarCheck, 
     WalletCards, Receipt, Settings as SettingsIcon, Calendar, 
-    Coffee, Clock, Banknote, LogOut, User, Activity, FileCheck, Laptop, Star, Network, BarChart3, AlarmClock
+    Coffee, Clock, Banknote, LogOut, User, Activity, FileCheck, Laptop, Star, Network, BarChart3, AlarmClock, Target, Briefcase
 } from 'lucide-react';
 import { useTheme } from '@/Components/ThemeProvider';
 import axios from 'axios';
@@ -141,6 +141,12 @@ export default function AuthenticatedLayout({ header, children }) {
                             </SidebarLink>
                             <SidebarLink href={route('performance-reviews')} active={route().current('performance-reviews')} icon={Star}>
                                 Penilaian Kinerja (KPI)
+                            </SidebarLink>
+                            <SidebarLink href={route('okr')} active={route().current('okr')} icon={Target}>
+                                Manajemen OKR
+                            </SidebarLink>
+                            <SidebarLink href={route('recruitment')} active={route().current('recruitment')} icon={Briefcase}>
+                                Recruitment & ATS
                             </SidebarLink>
                             <SidebarLink href={route('work-schedules')} active={route().current('work-schedules')} icon={AlarmClock}>
                                 Jadwal Kerja & Shift
