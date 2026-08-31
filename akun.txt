@@ -1,0 +1,7 @@
+1 Akun Super Admin (admin@gajihub.com | password: password)
+1 Akun HR Manager (hr@gajihub.com | password: password)
+5 Akun Karyawan Dummy (emp1@gajihub.com hingga emp5@gajihub.com | password: password123) lengkap dengan data departemen, kode pegawai, dan gaji pokok yang bervariasi.
+Komponen Gaji Master (Tunjangan Transport, BPJS, PPH 21).
+Riwayat Absensi Karyawan untuk 10 hari terakhir (termasuk status Hadir dan Alpha).
+Riwayat Cuti & Reimbursement dengan status acak (Disetujui/Ditolak/Menunggu).
+Riwayat Slip Gaji (Payroll) bulan sebelumnya agar grafik Dashboard langsung terlihat interaktif dan menampilkan data yang realistis.
