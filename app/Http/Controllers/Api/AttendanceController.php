@@ -9,7 +9,6 @@ use App\Models\Employee;
 use App\Models\Attendance;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 
@@ -81,7 +80,7 @@ class AttendanceController extends Controller
 
         // Geofencing Check
         if ($request->latitude && $request->longitude) {
-            $settings = Cache::remember('company_settings_mapped', 86400, function () {
+            $settings = cache()->remember('company_settings_mapped', 86400, function () {
                 $all = \App\Models\CompanySetting::all();
                 $mappedData = [];
                 foreach ($all as $setting) {

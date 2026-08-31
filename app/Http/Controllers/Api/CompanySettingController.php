@@ -5,13 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\CompanySetting;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 
 class CompanySettingController extends Controller
 {
     public function index()
     {
-        $mapped = Cache::remember('company_settings_mapped', 86400, function () {
+        $mapped = cache()->remember('company_settings_mapped', 86400, function () {
             $settings = CompanySetting::all();
             $mappedData = [];
             foreach ($settings as $setting) {
@@ -33,7 +32,7 @@ class CompanySettingController extends Controller
             );
         }
         
-        Cache::forget('company_settings_mapped');
+        cache()->forget('company_settings_mapped');
         
         return response()->json(['success' => true, 'message' => 'Pengaturan berhasil disimpan.']);
     }
@@ -51,7 +50,7 @@ class CompanySettingController extends Controller
 
         CompanySetting::updateOrCreate(['key' => $key], ['value' => $path]);
         
-        Cache::forget('company_settings_mapped');
+        cache()->forget('company_settings_mapped');
 
         return response()->json([
             'success' => true,

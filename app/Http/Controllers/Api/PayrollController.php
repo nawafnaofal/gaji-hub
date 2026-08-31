@@ -13,6 +13,7 @@ use App\Models\Attendance;
 use App\Models\SalaryComponent;
 use App\Models\Overtime;
 use App\Models\CompanySetting;
+use Illuminate\Support\Facades\Auth;
 
 class PayrollController extends Controller
 {
@@ -28,8 +29,18 @@ class PayrollController extends Controller
 
         DB::beginTransaction();
         try {
-            // Delete existing payroll for the same period to avoid duplicates
-            Payroll::where('period_month', $month)->where('period_year', $year)->delete();
+            // Check if there are already approved or paid payrolls for this month
+            $existingApproved = Payroll::where('period_month', $month)
+                ->where('period_year', $year)
+                ->whereIn('status', ['approved', 'paid'])
+                ->exists();
+
+            if ($existingApproved) {
+                return response()->json(['success' => false, 'message' => 'Gaji untuk periode ini sudah disetujui atau dibayarkan. Tidak bisa digenerate ulang.'], 400);
+            }
+
+            // Delete existing DRAFT payroll for the same period to avoid duplicates
+            Payroll::where('period_month', $month)->where('period_year', $year)->where('status', 'draft')->delete();
 
             $employees = Employee::all();
 
@@ -269,6 +280,12 @@ class PayrollController extends Controller
     {
         $payroll = Payroll::with(['employee.user'])->findOrFail($id);
         
+        // Authorization Check
+        $user = Auth::user();
+        if ($user->role === 'employee' && $payroll->employee_id !== $user->employee->id) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized access to this payroll'], 403);
+        }
+        
         return response()->json([
             'success' => true,
             'data' => $payroll
@@ -278,6 +295,13 @@ class PayrollController extends Controller
     public function downloadSlip($id)
     {
         $payroll = Payroll::with(['employee.user'])->findOrFail($id);
+        
+        // Authorization Check
+        $user = Auth::user();
+        if ($user->role === 'employee' && $payroll->employee_id !== $user->employee->id) {
+            abort(403, 'Unauthorized access to this payroll slip');
+        }
+        
         $settings = \App\Models\CompanySetting::pluck('value', 'key')->toArray();
         
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('slip', compact('payroll', 'settings'));

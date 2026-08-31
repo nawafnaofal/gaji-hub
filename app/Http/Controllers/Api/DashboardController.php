@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\Payroll;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Cache;
 
 class DashboardController extends Controller
 {
@@ -34,7 +33,7 @@ class DashboardController extends Controller
                 ->limit(5)
                 ->get();
                 
-            $settings = Cache::remember('company_settings_mapped', 86400, function () {
+            $settings = cache()->remember('company_settings_mapped', 86400, function () {
                 $all = \App\Models\CompanySetting::all();
                 $mappedData = [];
                 foreach ($all as $setting) {

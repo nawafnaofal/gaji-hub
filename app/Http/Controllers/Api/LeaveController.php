@@ -50,6 +50,23 @@ class LeaveController extends Controller
 
         $startDate = Carbon::parse($request->start_date);
         $endDate = Carbon::parse($request->end_date);
+        
+        $overlappingLeave = Leave::where('employee_id', $employee->id)
+            ->whereIn('status', ['pending_manager', 'pending_hr', 'approved'])
+            ->where(function ($query) use ($request) {
+                $query->whereBetween('start_date', [$request->start_date, $request->end_date])
+                      ->orWhereBetween('end_date', [$request->start_date, $request->end_date])
+                      ->orWhere(function ($q) use ($request) {
+                          $q->where('start_date', '<=', $request->start_date)
+                            ->where('end_date', '>=', $request->end_date);
+                      });
+            })
+            ->exists();
+
+        if ($overlappingLeave) {
+            return response()->json(['success' => false, 'message' => 'Anda sudah memiliki pengajuan cuti pada tanggal tersebut.'], 400);
+        }
+
         $requestedDays = $startDate->diffInDaysFiltered(function (Carbon $date) {
             return !$date->isWeekend();
         }, $endDate) + 1;
