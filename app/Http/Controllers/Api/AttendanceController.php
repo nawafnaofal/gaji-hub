@@ -9,6 +9,7 @@ use App\Models\Employee;
 use App\Models\Attendance;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 
@@ -80,9 +81,18 @@ class AttendanceController extends Controller
 
         // Geofencing Check
         if ($request->latitude && $request->longitude) {
-            $officeLat = \App\Models\CompanySetting::where('key', 'office_latitude')->value('value') ?: -6.151595380868531;
-            $officeLng = \App\Models\CompanySetting::where('key', 'office_longitude')->value('value') ?: 106.77652147472021;
-            $radius = \App\Models\CompanySetting::where('key', 'office_radius')->value('value') ?: 50;
+            $settings = Cache::remember('company_settings_mapped', 86400, function () {
+                $all = \App\Models\CompanySetting::all();
+                $mappedData = [];
+                foreach ($all as $setting) {
+                    $mappedData[$setting->key] = $setting->value;
+                }
+                return $mappedData;
+            });
+
+            $officeLat = $settings['office_latitude'] ?? -6.151595380868531;
+            $officeLng = $settings['office_longitude'] ?? 106.77652147472021;
+            $radius = $settings['office_radius'] ?? 50;
 
             $earthRadius = 6371000; // meters
             $latFrom = deg2rad((float)$request->latitude);

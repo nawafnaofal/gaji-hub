@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\Payroll;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Cache;
 
 class DashboardController extends Controller
 {
@@ -33,9 +34,18 @@ class DashboardController extends Controller
                 ->limit(5)
                 ->get();
                 
-            $officeLat = \App\Models\CompanySetting::where('key', 'office_latitude')->value('value') ?: -6.151595380868531;
-            $officeLng = \App\Models\CompanySetting::where('key', 'office_longitude')->value('value') ?: 106.77652147472021;
-            $officeRadius = \App\Models\CompanySetting::where('key', 'office_radius')->value('value') ?: 50;
+            $settings = Cache::remember('company_settings_mapped', 86400, function () {
+                $all = \App\Models\CompanySetting::all();
+                $mappedData = [];
+                foreach ($all as $setting) {
+                    $mappedData[$setting->key] = $setting->value;
+                }
+                return $mappedData;
+            });
+
+            $officeLat = $settings['office_latitude'] ?? -6.151595380868531;
+            $officeLng = $settings['office_longitude'] ?? 106.77652147472021;
+            $officeRadius = $settings['office_radius'] ?? 50;
                 
             return response()->json([
                 'success' => true,
