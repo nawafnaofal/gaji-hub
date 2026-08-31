@@ -12,7 +12,10 @@ export default function Settings({ auth }) {
         bpjs_kesehatan_rate: '4',
         bpjs_ketenagakerjaan_rate: '2',
         late_penalty: '50000',
-        absence_penalty: '100000'
+        absence_penalty: '100000',
+        office_latitude: '-6.200000',
+        office_longitude: '106.816666',
+        office_radius: '50'
     });
     
     const [loading, setLoading] = useState(false);
@@ -132,6 +135,25 @@ export default function Settings({ auth }) {
                                         <div>
                                             <label className="block text-sm font-medium mb-1">Potongan Mangkir per Hari (Rp)</label>
                                             <input type="number" name="absence_penalty" value={settings.absence_penalty || ''} onChange={handleChange} className="w-full rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-blue-500 text-sm" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Geofencing */}
+                                <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                                    <h4 className="font-semibold mb-4 border-b border-gray-200 dark:border-gray-600 pb-2">Geofencing & Presensi</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">Latitude Kantor</label>
+                                            <input type="text" name="office_latitude" value={settings.office_latitude || ''} onChange={handleChange} className="w-full rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-blue-500 text-sm" placeholder="Contoh: -6.200000" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">Longitude Kantor</label>
+                                            <input type="text" name="office_longitude" value={settings.office_longitude || ''} onChange={handleChange} className="w-full rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-blue-500 text-sm" placeholder="Contoh: 106.816666" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">Radius Toleransi (Meter)</label>
+                                            <input type="number" name="office_radius" value={settings.office_radius || ''} onChange={handleChange} className="w-full rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-blue-500 text-sm" placeholder="Contoh: 50" />
                                         </div>
                                     </div>
                                 </div>

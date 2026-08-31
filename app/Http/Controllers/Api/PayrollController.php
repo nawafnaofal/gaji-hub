@@ -324,4 +324,25 @@ class PayrollController extends Controller
         
         return response()->stream($callback, 200, $headers);
     }
+
+    public function disburse($id)
+    {
+        $payroll = Payroll::findOrFail($id);
+        
+        if ($payroll->status === 'paid') {
+            return response()->json(['success' => false, 'message' => 'Payroll is already paid.'], 400);
+        }
+
+        // Mock API Disbursement (e.g. Xendit, Midtrans)
+        // Simulate an API call...
+        
+        $payroll->update([
+            'status' => 'paid',
+            // Ideally record a transaction ID here
+        ]);
+
+        $this->notifyEmployee($payroll->employee, 'Gaji Dicairkan', 'Gaji bulan ' . $payroll->period_month . '/' . $payroll->period_year . ' telah ditransfer ke rekening Anda.', '/payroll', 'success');
+
+        return response()->json(['success' => true, 'message' => 'Dana berhasil dicairkan ke karyawan.', 'data' => $payroll]);
+    }
 }

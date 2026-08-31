@@ -14,6 +14,12 @@ Route::get('/', function () {
     ]);
 });
 
+Route::get('/careers', function () {
+    return Inertia::render('Careers/Index');
+})->name('careers');
+
+Route::post('/api/v1/recruitment/public/apply', [\App\Http\Controllers\Api\RecruitmentController::class, 'applyPublic']);
+
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
@@ -65,7 +71,15 @@ Route::get('/holidays', function () {
 
 Route::get('/company-documents', function () {
     return Inertia::render('CompanyDocument/Index');
-})->middleware(['auth', 'verified'])->name('company-documents');
+})->middleware(['auth', 'verified', 'role:admin,hr'])->name('company-documents');
+
+Route::get('/recruitment', function () {
+    return Inertia::render('Recruitment/Index');
+})->middleware(['auth', 'verified', 'role:admin,hr'])->name('recruitment');
+
+Route::get('/okr', function () {
+    return Inertia::render('Okr/Index');
+})->middleware(['auth', 'verified'])->name('okr');
 
 Route::get('/assets', function () {
     return Inertia::render('Asset/Index');
@@ -110,6 +124,16 @@ Route::middleware('auth')->prefix('api/v1')->group(function () {
     
     // Admin & HR Only API
     Route::middleware('role:admin,hr')->group(function () {
+        Route::get('/recruitment/positions', [\App\Http\Controllers\Api\RecruitmentController::class, 'getPositions']);
+        Route::post('/recruitment/positions', [\App\Http\Controllers\Api\RecruitmentController::class, 'storePosition']);
+        Route::get('/recruitment/applications', [\App\Http\Controllers\Api\RecruitmentController::class, 'getApplications']);
+        Route::put('/recruitment/applications/{id}/status', [\App\Http\Controllers\Api\RecruitmentController::class, 'updateApplicationStatus']);
+
+        Route::get('/okr', [\App\Http\Controllers\Api\OkrController::class, 'index']);
+        Route::post('/okr', [\App\Http\Controllers\Api\OkrController::class, 'storeObjective']);
+        Route::post('/okr/key-results', [\App\Http\Controllers\Api\OkrController::class, 'storeKeyResult']);
+        Route::put('/okr/key-results/{id}/progress', [\App\Http\Controllers\Api\OkrController::class, 'updateProgress']);
+
         Route::get('/attendances/export', [\App\Http\Controllers\Api\AttendanceController::class, 'exportExcel']);
         Route::get('/attendances', [\App\Http\Controllers\Api\AttendanceController::class, 'index']);
         Route::post('/attendances', [\App\Http\Controllers\Api\AttendanceController::class, 'store']);
@@ -125,6 +149,7 @@ Route::middleware('auth')->prefix('api/v1')->group(function () {
         Route::get('/payrolls', [\App\Http\Controllers\Api\PayrollController::class, 'index']);
         Route::get('/payrolls/export', [\App\Http\Controllers\Api\PayrollController::class, 'exportCsv']);
         Route::post('/payrolls/generate', [\App\Http\Controllers\Api\PayrollController::class, 'generate']);
+        Route::post('/payrolls/{id}/disburse', [\App\Http\Controllers\Api\PayrollController::class, 'disburse']);
         Route::get('/dashboard/stats', [\App\Http\Controllers\Api\DashboardController::class, 'stats']);
 
         Route::get('/settings', [\App\Http\Controllers\Api\CompanySettingController::class, 'index']);

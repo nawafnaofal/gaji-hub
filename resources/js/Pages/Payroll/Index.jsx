@@ -51,6 +51,19 @@ export default function PayrollIndex({ auth }) {
         }
     };
 
+    const handleDisburse = async (id) => {
+        if (!confirm('Anda yakin ingin mencairkan dana (transfer) untuk payroll ini?')) return;
+        
+        try {
+            await axios.post(`/api/v1/payrolls/${id}/disburse`);
+            fetchPayrolls();
+            alert('Dana berhasil dicairkan!');
+        } catch (error) {
+            console.error('Error disbursing payroll', error);
+            alert(error.response?.data?.message || 'Gagal mencairkan dana.');
+        }
+    };
+
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -128,6 +141,9 @@ export default function PayrollIndex({ auth }) {
                                                             </span>
                                                         </td>
                                                         <td className="p-4 text-center space-x-2">
+                                                            {item.status === 'approved' && auth.user?.role !== 'employee' && (
+                                                                <button onClick={() => handleDisburse(item.id)} className="text-green-500 hover:text-green-700 text-sm font-medium mr-2">Disburse</button>
+                                                            )}
                                                             <Link href={`/payroll/${item.id}`} className="text-blue-500 hover:text-blue-700 text-sm font-medium">Detail</Link>
                                                             <a href={`/api/v1/payrolls/${item.id}/slip`} target="_blank" rel="noopener noreferrer" className="text-red-500 hover:text-red-700 text-sm font-medium">PDF</a>
                                                         </td>

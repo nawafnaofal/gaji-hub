@@ -78,6 +78,29 @@ class AttendanceController extends Controller
             }
         }
 
+        // Geofencing Check
+        if ($request->latitude && $request->longitude) {
+            $officeLat = \App\Models\CompanySetting::where('key', 'office_latitude')->value('value') ?: -6.200000;
+            $officeLng = \App\Models\CompanySetting::where('key', 'office_longitude')->value('value') ?: 106.816666;
+            $radius = \App\Models\CompanySetting::where('key', 'office_radius')->value('value') ?: 50;
+
+            $earthRadius = 6371000; // meters
+            $latFrom = deg2rad((float)$request->latitude);
+            $lonFrom = deg2rad((float)$request->longitude);
+            $latTo = deg2rad((float)$officeLat);
+            $lonTo = deg2rad((float)$officeLng);
+
+            $latDelta = $latTo - $latFrom;
+            $lonDelta = $lonTo - $lonFrom;
+
+            $angle = 2 * asin(sqrt(pow(sin($latDelta / 2), 2) + cos($latFrom) * cos($latTo) * pow(sin($lonDelta / 2), 2)));
+            $distance = $angle * $earthRadius;
+
+            if ($distance > $radius) {
+                return response()->json(['success' => false, 'message' => 'Anda berada di luar radius kantor (' . round($distance) . ' meter). Radius maksimal: ' . $radius . ' meter.'], 400);
+            }
+        }
+
         // Determine status (Late if after 08:00:00)
         $status = $currentTime > '08:00:00' ? 'late' : 'present';
 
