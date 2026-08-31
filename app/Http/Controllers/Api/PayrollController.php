@@ -62,18 +62,27 @@ class PayrollController extends Controller
                                 ->whereMonth('date', $month)
                                 ->whereYear('date', $year)
                                 ->get();
-                
+                $presentDays = $attendances->whereIn('status', ['present', 'late'])->count();
+                $lateDays = $attendances->where('status', 'late')->count();
+                $leaveDays = $attendances->where('status', 'leave')->count();
+                $sickDays = $attendances->where('status', 'sick')->count();
+                $permitDays = $attendances->where('status', 'permit')->count();
+
                 // Get holidays in this month
                 $holidaysCount = \App\Models\Holiday::whereMonth('date', $month)
                                 ->whereYear('date', $year)
                                 ->count();
                 
-                $presentDays = $attendances->whereIn('status', ['present', 'late'])->count();
-                $lateDays = $attendances->where('status', 'late')->count();
-                $leaveDays = $attendances->where('status', 'leave')->count();
-                
                 // Asumsi 22 hari kerja dalam sebulan, dikurangi hari libur nasional
-                $workingDays = max(0, 22 - $holidaysCount);
+                $workingDays = 22 - $holidaysCount;
+                if ($workingDays < 1) $workingDays = 22; // fallback
+
+                // Perhitungan Absen Mangkir (Tanpa Keterangan)
+                $effectiveWorkingDays = $presentDays + $leaveDays + $sickDays + $permitDays + $holidaysCount;
+                $absentCount = 0;
+                if ($effectiveWorkingDays < $workingDays) {
+                    $absentCount = $workingDays - $effectiveWorkingDays;
+                }
 
                 // Jika tidak ada data absen sama sekali, mari kita anggap hadir penuh untuk simulasi ini 
                 // agar tidak menjadi 0 gajinya (karena HR mungkin belum input).
@@ -97,10 +106,8 @@ class PayrollController extends Controller
                 }
 
                 // Kalkulasi potongan absen
-                $effectiveWorkingDays = $presentDays + $leaveDays;
-                if ($effectiveWorkingDays < $workingDays) {
-                    $absentCount = $workingDays - $effectiveWorkingDays;
-                    // Jika ada absence_penalty disetting (non-0), gunakan itu. Jika tidak, gunakan Prorata.
+                $absenceDeduction = 0;
+                if ($absentCount > 0) {
                     if ($absencePenaltySetting > 0) {
                         $absenceDeduction = $absentCount * $absencePenaltySetting;
                     } else {
@@ -135,10 +142,24 @@ class PayrollController extends Controller
                 $overtimePay = $overtimes * 25000;
                 $totalAllowance += $overtimePay;
 
-                // Hitung BPJS berdasarkan setting
-                $bpjsKesehatan = min($basicSalary, 12000000) * $bpjsKesehatanRate;
-                $bpjsTenagakerja = min($basicSalary, 10000000) * $bpjsKetenagakerjaanRate;
-                $totalDeduction += ($bpjsKesehatan + $bpjsTenagakerja);
+                // Tunjangan Kehadiran (Transportasi & Makan)
+                $tunjanganTransport = 45000 * $presentDays;
+                $tunjanganMakan = 45000 * $presentDays;
+                $totalAllowance += ($tunjanganTransport + $tunjanganMakan);
+
+                // Hitung BPJS Perusahaan (Benefit / Employer Portion)
+                $bpjsTkJhtCompany = $basicSalary * 0.037; // 3.70%
+                $bpjsTkJkkCompany = $basicSalary * 0.0024; // 0.24%
+                $bpjsTkJkmCompany = $basicSalary * 0.0030; // 0.30%
+                $bpjsTkJpCompany = $basicSalary * 0.02; // 2%
+                $bpjsKesCompany = min($basicSalary, 12000000) * 0.04; // 4%
+
+                // Hitung BPJS Karyawan (Deduction / Employee Portion)
+                $bpjsTkJhtEmployee = $basicSalary * 0.02; // 2%
+                $bpjsTkJpEmployee = $basicSalary * 0.01; // 1%
+                $bpjsKesEmployee = min($basicSalary, 12000000) * 0.01; // 1%
+                
+                $totalDeduction += ($bpjsKesEmployee + $bpjsTkJhtEmployee + $bpjsTkJpEmployee);
 
                 // Hitung PPh 21 (Sederhana berdasarkan PTKP bulanan)
                 $bruto = $basicSalary + $totalAllowance;
@@ -159,7 +180,7 @@ class PayrollController extends Controller
                 $taxStatus = $emp->tax_status ?? 'TK/0';
                 $ptkp = $ptkpMap[$taxStatus] ?? 4500000;
 
-                $neto = $bruto - $biayaJabatan - $bpjsKesehatan - $bpjsTenagakerja;
+                $neto = $bruto - $biayaJabatan - $bpjsKesEmployee - $bpjsTkJhtEmployee - $bpjsTkJpEmployee;
                 $pkp = $neto - $ptkp;
                 
                 $pph21 = 0;
@@ -213,15 +234,33 @@ class PayrollController extends Controller
                     'net_salary' => $netSalary,
                     'status' => 'draft',
                     'details' => json_encode([
+                        'attendance_summary' => [
+                            'total_days' => $workingDays,
+                            'present' => $presentDays,
+                            'absent' => $absentCount,
+                            'leave' => $leaveDays,
+                            'sick' => $sickDays,
+                            'permit' => $permitDays,
+                        ],
                         'allowances' => [
+                            'transport' => $tunjanganTransport,
+                            'meal' => $tunjanganMakan,
                             'reimbursement' => $reimbursements,
                             'overtime' => $overtimePay,
+                        ],
+                        'benefits' => [
+                            'bpjs_tk_jht' => $bpjsTkJhtCompany,
+                            'bpjs_tk_jkk' => $bpjsTkJkkCompany,
+                            'bpjs_tk_jkm' => $bpjsTkJkmCompany,
+                            'bpjs_tk_jp' => $bpjsTkJpCompany,
+                            'bpjs_kesehatan' => $bpjsKesCompany,
                         ],
                         'deductions' => [
                             'absence_penalty' => $absenceDeduction,
                             'late_penalty' => $lateDeduction,
-                            'bpjs_kesehatan' => $bpjsKesehatan,
-                            'bpjs_ketenagakerjaan' => $bpjsTenagakerja,
+                            'bpjs_kesehatan' => $bpjsKesEmployee,
+                            'bpjs_tk_jht' => $bpjsTkJhtEmployee,
+                            'bpjs_tk_jp' => $bpjsTkJpEmployee,
                             'pph21' => $pph21,
                             'cash_advance' => $cashAdvanceTotal,
                             'loan_installment' => $loanInstallmentTotal
