@@ -170,33 +170,48 @@ class PayrollController extends Controller
                 
                 $totalDeduction += ($bpjsKesEmployee + $bpjsTkJhtEmployee + $bpjsTkJpEmployee);
 
-                // Hitung PPh 21 (Sederhana berdasarkan PTKP bulanan)
+                // Hitung PPh 21 (TER 2024)
                 $bruto = $basicSalary + $totalAllowance;
-                // Asumsi Biaya Jabatan 5% (Maks 500.000)
-                $biayaJabatan = min($bruto * 0.05, 500000);
                 
-                // PTKP mapping (bulanan)
-                $ptkpMap = [
-                    'TK/0' => 4500000,
-                    'TK/1' => 4875000,
-                    'TK/2' => 5250000,
-                    'TK/3' => 5625000,
-                    'K/0'  => 4875000,
-                    'K/1'  => 5250000,
-                    'K/2'  => 5625000,
-                    'K/3'  => 6000000,
-                ];
+                // Menentukan Kategori TER
                 $taxStatus = $emp->tax_status ?? 'TK/0';
-                $ptkp = $ptkpMap[$taxStatus] ?? 4500000;
-
-                $neto = $bruto - $biayaJabatan - $bpjsKesEmployee - $bpjsTkJhtEmployee - $bpjsTkJpEmployee;
-                $pkp = $neto - $ptkp;
+                $kategoriA = ['TK/0', 'TK/1', 'K/0'];
+                $kategoriB = ['TK/2', 'TK/3', 'K/1', 'K/2'];
+                $kategoriC = ['K/3'];
                 
-                $pph21 = 0;
-                if ($pkp > 0) {
-                    // PPh 21 tarif pasal 17 layer 1 sederhana (5%)
-                    $pph21 = $pkp * 0.05;
+                $terRate = 0;
+                
+                if (in_array($taxStatus, $kategoriA)) {
+                    if ($bruto <= 5400000) $terRate = 0;
+                    elseif ($bruto <= 5650000) $terRate = 0.0025;
+                    elseif ($bruto <= 5950000) $terRate = 0.005;
+                    elseif ($bruto <= 6300000) $terRate = 0.0075;
+                    elseif ($bruto <= 6750000) $terRate = 0.01;
+                    elseif ($bruto <= 7500000) $terRate = 0.0125;
+                    elseif ($bruto <= 8550000) $terRate = 0.015;
+                    elseif ($bruto <= 9650000) $terRate = 0.0175;
+                    elseif ($bruto <= 10050000) $terRate = 0.02;
+                    else $terRate = 0.025; // Sederhana
+                } elseif (in_array($taxStatus, $kategoriB)) {
+                    if ($bruto <= 6200000) $terRate = 0;
+                    elseif ($bruto <= 6500000) $terRate = 0.0025;
+                    elseif ($bruto <= 6850000) $terRate = 0.005;
+                    elseif ($bruto <= 7300000) $terRate = 0.0075;
+                    elseif ($bruto <= 9200000) $terRate = 0.015;
+                    elseif ($bruto <= 10050000) $terRate = 0.0175;
+                    else $terRate = 0.02; // Sederhana
+                } else {
+                    // Kategori C (K/3)
+                    if ($bruto <= 6600000) $terRate = 0;
+                    elseif ($bruto <= 6950000) $terRate = 0.0025;
+                    elseif ($bruto <= 7350000) $terRate = 0.005;
+                    elseif ($bruto <= 7800000) $terRate = 0.0075;
+                    elseif ($bruto <= 8850000) $terRate = 0.01;
+                    elseif ($bruto <= 9800000) $terRate = 0.0125;
+                    else $terRate = 0.015; // Sederhana
                 }
+
+                $pph21 = round($bruto * $terRate);
                 $totalDeduction += $pph21;
 
                 // Kasbon (Pinjaman Karyawan)

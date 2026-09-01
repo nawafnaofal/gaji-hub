@@ -52,6 +52,12 @@ class AttendanceController extends Controller
 
     public function clockIn(Request $request)
     {
+        $request->validate([
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+            'photo' => 'required|string'
+        ]);
+
         $employee = Auth::user()->employee;
         if (!$employee) return response()->json(['success' => false, 'message' => 'Not an employee'], 403);
 
@@ -129,8 +135,44 @@ class AttendanceController extends Controller
 
     public function clockOut(Request $request)
     {
+        $request->validate([
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+            'photo' => 'required|string'
+        ]);
+
         $employee = Auth::user()->employee;
         if (!$employee) return response()->json(['success' => false, 'message' => 'Not an employee'], 403);
+
+        // Geofencing Check for Clock Out
+        $settings = cache()->remember('company_settings_mapped', 86400, function () {
+            $all = \App\Models\CompanySetting::all();
+            $mappedData = [];
+            foreach ($all as $setting) {
+                $mappedData[$setting->key] = $setting->value;
+            }
+            return $mappedData;
+        });
+
+        $officeLat = $settings['office_latitude'] ?? -6.151595380868531;
+        $officeLng = $settings['office_longitude'] ?? 106.77652147472021;
+        $radius = $settings['office_radius'] ?? 50;
+
+        $earthRadius = 6371000; // meters
+        $latFrom = deg2rad((float)$request->latitude);
+        $lonFrom = deg2rad((float)$request->longitude);
+        $latTo = deg2rad((float)$officeLat);
+        $lonTo = deg2rad((float)$officeLng);
+
+        $latDelta = $latTo - $latFrom;
+        $lonDelta = $lonTo - $lonFrom;
+
+        $angle = 2 * asin(sqrt(pow(sin($latDelta / 2), 2) + cos($latFrom) * cos($latTo) * pow(sin($lonDelta / 2), 2)));
+        $distance = $angle * $earthRadius;
+
+        if ($distance > $radius) {
+            return response()->json(['success' => false, 'message' => 'Anda berada di luar radius kantor (' . round($distance) . ' meter). Radius maksimal: ' . $radius . ' meter.'], 400);
+        }
 
         $today = Carbon::today()->format('Y-m-d');
         $currentTime = Carbon::now()->format('H:i:s');
