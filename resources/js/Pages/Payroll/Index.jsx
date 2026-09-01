@@ -284,6 +284,24 @@ export default function PayrollIndex({ auth }) {
                                                 <td className="p-3 font-medium text-red-600 dark:text-red-400 text-right text-sm">- {formatCurrency(selectedPayroll.details.deductions.pph21)}</td>
                                             </tr>
                                         )}
+                                        {selectedPayroll.details?.deductions?.bpjs_tk_jp > 0 && (
+                                            <tr>
+                                                <td className="p-3 bg-gray-50 dark:bg-gray-800 w-2/3 pl-8 text-sm text-gray-600 dark:text-gray-400">BPJS TK JP (1%)</td>
+                                                <td className="p-3 font-medium text-red-600 dark:text-red-400 text-right text-sm">- {formatCurrency(selectedPayroll.details.deductions.bpjs_tk_jp)}</td>
+                                            </tr>
+                                        )}
+                                        {selectedPayroll.details?.deductions?.cash_advance > 0 && (
+                                            <tr>
+                                                <td className="p-3 bg-gray-50 dark:bg-gray-800 w-2/3 pl-8 text-sm text-gray-600 dark:text-gray-400">Potongan Kasbon</td>
+                                                <td className="p-3 font-medium text-red-600 dark:text-red-400 text-right text-sm">- {formatCurrency(selectedPayroll.details.deductions.cash_advance)}</td>
+                                            </tr>
+                                        )}
+                                        {selectedPayroll.details?.deductions?.loan_installment > 0 && (
+                                            <tr>
+                                                <td className="p-3 bg-gray-50 dark:bg-gray-800 w-2/3 pl-8 text-sm text-gray-600 dark:text-gray-400">Cicilan Pinjaman</td>
+                                                <td className="p-3 font-medium text-red-600 dark:text-red-400 text-right text-sm">- {formatCurrency(selectedPayroll.details.deductions.loan_installment)}</td>
+                                            </tr>
+                                        )}
                                         <tr className="bg-gray-100 dark:bg-gray-700">
                                             <td className="p-3 font-semibold text-gray-700 dark:text-gray-200 w-2/3">Total Potongan</td>
                                             <td className="p-3 font-bold text-red-600 dark:text-red-400 text-right">- {formatCurrency(selectedPayroll.total_deduction)}</td>
