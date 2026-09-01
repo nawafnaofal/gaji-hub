@@ -93,6 +93,15 @@ class PayrollController extends Controller
                 }
 
                 $basicSalary = $emp->basic_salary;
+                
+                // Prorata calculation for new joiners
+                $joinDate = $emp->join_date ? \Carbon\Carbon::parse($emp->join_date) : null;
+                if ($joinDate && $joinDate->year == $year && $joinDate->month == $month) {
+                    $daysInMonth = $joinDate->daysInMonth;
+                    $remainingDays = $daysInMonth - $joinDate->day + 1;
+                    $prorateRatio = $remainingDays / $daysInMonth;
+                    $basicSalary = round($basicSalary * $prorateRatio);
+                }
                 $totalAllowance = 0;
                 $totalDeduction = 0;
 
@@ -420,6 +429,12 @@ class PayrollController extends Controller
         ]);
 
         $this->notifyEmployee($payroll->employee, 'Gaji Dicairkan', 'Gaji bulan ' . $payroll->period_month . '/' . $payroll->period_year . ' telah ditransfer ke rekening Anda.', '/payroll', 'success');
+
+        try {
+            \Illuminate\Support\Facades\Mail::to($payroll->employee->user->email)->send(new \App\Mail\PayrollSlipMail($payroll));
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to send payroll email: " . $e->getMessage());
+        }
 
         return response()->json(['success' => true, 'message' => 'Dana berhasil dicairkan ke karyawan.', 'data' => $payroll]);
     }

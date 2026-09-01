@@ -130,11 +130,36 @@ export default function Dashboard() {
 
     const handleClockOut = async () => {
         try {
-            const res = await axios.post('/api/v1/attendances/clock-out');
-            toast.success(res.data.message);
+            if (!stream) {
+                toast.error("Silakan nyalakan kamera terlebih dahulu!");
+                return;
+            }
+
+            // Capture photo
+            const canvas = canvasRef.current;
+            const video = videoRef.current;
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+            const photoData = canvas.toDataURL('image/jpeg');
+
+            toast.loading("Mendapatkan lokasi dan mengirim data absen...", { id: 'clockout' });
+            
+            const loc = await getLocation();
+            setLocation(loc);
+
+            const res = await axios.post('/api/v1/attendances/clock-out', {
+                latitude: loc.latitude,
+                longitude: loc.longitude,
+                photo: photoData
+            });
+
+            toast.success(res.data.message, { id: 'clockout' });
+            stopCamera();
             fetchStats();
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Gagal Clock Out');
+            console.error(error);
+            toast.error(error.response?.data?.message || error.message || 'Gagal Clock Out', { id: 'clockout' });
         }
     };
 
