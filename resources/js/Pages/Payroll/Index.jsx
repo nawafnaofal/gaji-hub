@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
-import { PlusCircle, Download } from 'lucide-react';
+import { PlusCircle, Search, Download, X } from 'lucide-react';
+import Modal from '@/Components/Modal';
 
 export default function PayrollIndex({ auth }) {
     const [payrolls, setPayrolls] = useState([]);
@@ -10,6 +11,7 @@ export default function PayrollIndex({ auth }) {
     const [search, setSearch] = useState('');
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [selectedPayroll, setSelectedPayroll] = useState(null);
 
     const fetchPayrolls = async () => {
         setLoading(true);
@@ -47,7 +49,7 @@ export default function PayrollIndex({ auth }) {
             alert('Payroll berhasil di-generate!');
         } catch (error) {
             console.error('Error generating payroll', error);
-            alert('Gagal men-generate payroll.');
+            alert(error.response?.data?.message || 'Gagal men-generate payroll.');
         }
     };
 
@@ -159,7 +161,7 @@ export default function PayrollIndex({ auth }) {
                                                             {item.status === 'approved' && auth.user?.role !== 'employee' && (
                                                                 <button onClick={() => handleDisburse(item.id)} className="text-green-500 hover:text-green-700 text-sm font-medium mr-2">Disburse</button>
                                                             )}
-                                                            <Link href={`/payroll/${item.id}`} className="text-blue-500 hover:text-blue-700 text-sm font-medium">Detail</Link>
+                                                            <button onClick={() => setSelectedPayroll(item)} className="text-blue-500 hover:text-blue-700 text-sm font-medium mr-2">Detail</button>
                                                             <a href={`/api/v1/payrolls/${item.id}/slip`} target="_blank" rel="noopener noreferrer" className="text-red-500 hover:text-red-700 text-sm font-medium">PDF</a>
                                                         </td>
                                                     </tr>
@@ -194,6 +196,121 @@ export default function PayrollIndex({ auth }) {
                     </div>
                 </div>
             </div>
+
+            <Modal show={selectedPayroll !== null} onClose={() => setSelectedPayroll(null)} maxWidth="2xl">
+                {selectedPayroll && (
+                    <div className="p-6">
+                        <div className="flex justify-between items-start border-b pb-4 mb-4">
+                            <div>
+                                <h3 className="text-2xl font-bold dark:text-gray-100">{selectedPayroll.employee?.user?.name}</h3>
+                                <p className="text-gray-500 dark:text-gray-400">ID Karyawan: {selectedPayroll.employee?.employee_code}</p>
+                                <p className="text-gray-500 dark:text-gray-400">Departemen: {selectedPayroll.employee?.department_id}</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="font-semibold text-gray-700 dark:text-gray-300">Periode</p>
+                                <p className="text-xl dark:text-gray-200">{selectedPayroll.period_month} / {selectedPayroll.period_year}</p>
+                                <span className={`inline-block mt-2 px-3 py-1 text-sm font-semibold rounded-full ${
+                                    selectedPayroll.status === 'paid' ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400' : 
+                                    selectedPayroll.status === 'approved' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400' : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-400'
+                                }`}>
+                                    {selectedPayroll.status.toUpperCase()}
+                                </span>
+                            </div>
+                            <button onClick={() => setSelectedPayroll(null)} className="ml-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div>
+                                <h4 className="font-bold text-lg mb-2 dark:text-gray-200">1. Pendapatan</h4>
+                                <table className="w-full border dark:border-gray-700 text-left">
+                                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                                        <tr>
+                                            <td className="p-3 bg-gray-50 dark:bg-gray-800 dark:text-gray-300 w-2/3">Gaji Pokok</td>
+                                            <td className="p-3 font-medium text-right dark:text-gray-200">{formatCurrency(selectedPayroll.total_basic)}</td>
+                                        </tr>
+                                        {selectedPayroll.details?.allowances?.overtime > 0 && (
+                                            <tr>
+                                                <td className="p-3 bg-gray-50 dark:bg-gray-800 w-2/3 pl-8 text-sm text-gray-600 dark:text-gray-400">Uang Lembur (Overtime)</td>
+                                                <td className="p-3 font-medium text-right text-sm dark:text-gray-300">{formatCurrency(selectedPayroll.details.allowances.overtime)}</td>
+                                            </tr>
+                                        )}
+                                        {selectedPayroll.details?.allowances?.reimbursement > 0 && (
+                                            <tr>
+                                                <td className="p-3 bg-gray-50 dark:bg-gray-800 w-2/3 pl-8 text-sm text-gray-600 dark:text-gray-400">Reimbursement (Klaim)</td>
+                                                <td className="p-3 font-medium text-right text-sm dark:text-gray-300">{formatCurrency(selectedPayroll.details.allowances.reimbursement)}</td>
+                                            </tr>
+                                        )}
+                                        <tr className="bg-gray-100 dark:bg-gray-700">
+                                            <td className="p-3 font-semibold text-gray-700 dark:text-gray-200 w-2/3">Total Pendapatan Tambahan</td>
+                                            <td className="p-3 font-bold text-right dark:text-gray-100">{formatCurrency(selectedPayroll.total_allowance)}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div>
+                                <h4 className="font-bold text-lg mb-2 dark:text-gray-200">2. Potongan</h4>
+                                <table className="w-full border dark:border-gray-700 text-left">
+                                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                                        {selectedPayroll.details?.deductions?.late_penalty > 0 && (
+                                            <tr>
+                                                <td className="p-3 bg-gray-50 dark:bg-gray-800 w-2/3 pl-8 text-sm text-gray-600 dark:text-gray-400">Denda Keterlambatan</td>
+                                                <td className="p-3 font-medium text-red-600 dark:text-red-400 text-right text-sm">- {formatCurrency(selectedPayroll.details.deductions.late_penalty)}</td>
+                                            </tr>
+                                        )}
+                                        {selectedPayroll.details?.deductions?.absence_penalty > 0 && (
+                                            <tr>
+                                                <td className="p-3 bg-gray-50 dark:bg-gray-800 w-2/3 pl-8 text-sm text-gray-600 dark:text-gray-400">Potongan Absen</td>
+                                                <td className="p-3 font-medium text-red-600 dark:text-red-400 text-right text-sm">- {formatCurrency(selectedPayroll.details.deductions.absence_penalty)}</td>
+                                            </tr>
+                                        )}
+                                        {selectedPayroll.details?.deductions?.bpjs_kesehatan > 0 && (
+                                            <tr>
+                                                <td className="p-3 bg-gray-50 dark:bg-gray-800 w-2/3 pl-8 text-sm text-gray-600 dark:text-gray-400">BPJS Kesehatan (1%)</td>
+                                                <td className="p-3 font-medium text-red-600 dark:text-red-400 text-right text-sm">- {formatCurrency(selectedPayroll.details.deductions.bpjs_kesehatan)}</td>
+                                            </tr>
+                                        )}
+                                        {selectedPayroll.details?.deductions?.bpjs_tk_jht > 0 && (
+                                            <tr>
+                                                <td className="p-3 bg-gray-50 dark:bg-gray-800 w-2/3 pl-8 text-sm text-gray-600 dark:text-gray-400">BPJS TK JHT (2%)</td>
+                                                <td className="p-3 font-medium text-red-600 dark:text-red-400 text-right text-sm">- {formatCurrency(selectedPayroll.details.deductions.bpjs_tk_jht)}</td>
+                                            </tr>
+                                        )}
+                                        {selectedPayroll.details?.deductions?.pph21 > 0 && (
+                                            <tr>
+                                                <td className="p-3 bg-gray-50 dark:bg-gray-800 w-2/3 pl-8 text-sm text-gray-600 dark:text-gray-400">PPh 21</td>
+                                                <td className="p-3 font-medium text-red-600 dark:text-red-400 text-right text-sm">- {formatCurrency(selectedPayroll.details.deductions.pph21)}</td>
+                                            </tr>
+                                        )}
+                                        <tr className="bg-gray-100 dark:bg-gray-700">
+                                            <td className="p-3 font-semibold text-gray-700 dark:text-gray-200 w-2/3">Total Potongan</td>
+                                            <td className="p-3 font-bold text-red-600 dark:text-red-400 text-right">- {formatCurrency(selectedPayroll.total_deduction)}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg flex justify-between items-center mt-6">
+                                <h4 className="font-bold text-xl text-blue-900 dark:text-blue-300">Total Gaji Bersih (Take Home Pay)</h4>
+                                <p className="font-bold text-2xl text-green-600 dark:text-green-400">{formatCurrency(selectedPayroll.net_salary)}</p>
+                            </div>
+                        </div>
+                        
+                        <div className="mt-8 flex justify-end">
+                            <a 
+                                href={`/api/v1/payrolls/${selectedPayroll.id}/slip`} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-medium shadow-sm transition"
+                            >
+                                Download Slip Gaji (PDF)
+                            </a>
+                        </div>
+                    </div>
+                )}
+            </Modal>
         </AuthenticatedLayout>
     );
 }
