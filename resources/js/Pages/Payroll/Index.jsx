@@ -198,7 +198,9 @@ export default function PayrollIndex({ auth }) {
             </div>
 
             <Modal show={selectedPayroll !== null} onClose={() => setSelectedPayroll(null)} maxWidth="2xl">
-                {selectedPayroll && (
+                {selectedPayroll && (() => {
+                    const details = typeof selectedPayroll.details === 'string' ? JSON.parse(selectedPayroll.details) : (selectedPayroll.details || {});
+                    return (
                     <div className="p-6">
                         <div className="flex justify-between items-start border-b pb-4 mb-4">
                             <div>
@@ -230,16 +232,16 @@ export default function PayrollIndex({ auth }) {
                                             <td className="p-3 bg-gray-50 dark:bg-gray-800 dark:text-gray-300 w-2/3">Gaji Pokok</td>
                                             <td className="p-3 font-medium text-right dark:text-gray-200">{formatCurrency(selectedPayroll.total_basic)}</td>
                                         </tr>
-                                        {selectedPayroll.details?.allowances?.overtime > 0 && (
+                                        {details?.allowances?.overtime > 0 && (
                                             <tr>
                                                 <td className="p-3 bg-gray-50 dark:bg-gray-800 w-2/3 pl-8 text-sm text-gray-600 dark:text-gray-400">Uang Lembur (Overtime)</td>
-                                                <td className="p-3 font-medium text-right text-sm dark:text-gray-300">{formatCurrency(selectedPayroll.details.allowances.overtime)}</td>
+                                                <td className="p-3 font-medium text-right text-sm dark:text-gray-300">{formatCurrency(details.allowances.overtime)}</td>
                                             </tr>
                                         )}
-                                        {selectedPayroll.details?.allowances?.reimbursement > 0 && (
+                                        {details?.allowances?.reimbursement > 0 && (
                                             <tr>
                                                 <td className="p-3 bg-gray-50 dark:bg-gray-800 w-2/3 pl-8 text-sm text-gray-600 dark:text-gray-400">Reimbursement (Klaim)</td>
-                                                <td className="p-3 font-medium text-right text-sm dark:text-gray-300">{formatCurrency(selectedPayroll.details.allowances.reimbursement)}</td>
+                                                <td className="p-3 font-medium text-right text-sm dark:text-gray-300">{formatCurrency(details.allowances.reimbursement)}</td>
                                             </tr>
                                         )}
                                         <tr className="bg-gray-100 dark:bg-gray-700">
@@ -254,52 +256,52 @@ export default function PayrollIndex({ auth }) {
                                 <h4 className="font-bold text-lg mb-2 dark:text-gray-200">2. Potongan</h4>
                                 <table className="w-full border dark:border-gray-700 text-left">
                                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                                        {selectedPayroll.details?.deductions?.late_penalty > 0 && (
+                                        {details?.deductions?.late_penalty > 0 && (
                                             <tr>
                                                 <td className="p-3 bg-gray-50 dark:bg-gray-800 w-2/3 pl-8 text-sm text-gray-600 dark:text-gray-400">Denda Keterlambatan</td>
-                                                <td className="p-3 font-medium text-red-600 dark:text-red-400 text-right text-sm">- {formatCurrency(selectedPayroll.details.deductions.late_penalty)}</td>
+                                                <td className="p-3 font-medium text-red-600 dark:text-red-400 text-right text-sm">- {formatCurrency(details.deductions.late_penalty)}</td>
                                             </tr>
                                         )}
-                                        {selectedPayroll.details?.deductions?.absence_penalty > 0 && (
+                                        {details?.deductions?.absence_penalty > 0 && (
                                             <tr>
                                                 <td className="p-3 bg-gray-50 dark:bg-gray-800 w-2/3 pl-8 text-sm text-gray-600 dark:text-gray-400">Potongan Absen</td>
-                                                <td className="p-3 font-medium text-red-600 dark:text-red-400 text-right text-sm">- {formatCurrency(selectedPayroll.details.deductions.absence_penalty)}</td>
+                                                <td className="p-3 font-medium text-red-600 dark:text-red-400 text-right text-sm">- {formatCurrency(details.deductions.absence_penalty)}</td>
                                             </tr>
                                         )}
-                                        {selectedPayroll.details?.deductions?.bpjs_kesehatan > 0 && (
+                                        {details?.deductions?.bpjs_kesehatan > 0 && (
                                             <tr>
                                                 <td className="p-3 bg-gray-50 dark:bg-gray-800 w-2/3 pl-8 text-sm text-gray-600 dark:text-gray-400">BPJS Kesehatan (1%)</td>
-                                                <td className="p-3 font-medium text-red-600 dark:text-red-400 text-right text-sm">- {formatCurrency(selectedPayroll.details.deductions.bpjs_kesehatan)}</td>
+                                                <td className="p-3 font-medium text-red-600 dark:text-red-400 text-right text-sm">- {formatCurrency(details.deductions.bpjs_kesehatan)}</td>
                                             </tr>
                                         )}
-                                        {selectedPayroll.details?.deductions?.bpjs_tk_jht > 0 && (
+                                        {details?.deductions?.bpjs_tk_jht > 0 && (
                                             <tr>
                                                 <td className="p-3 bg-gray-50 dark:bg-gray-800 w-2/3 pl-8 text-sm text-gray-600 dark:text-gray-400">BPJS TK JHT (2%)</td>
-                                                <td className="p-3 font-medium text-red-600 dark:text-red-400 text-right text-sm">- {formatCurrency(selectedPayroll.details.deductions.bpjs_tk_jht)}</td>
+                                                <td className="p-3 font-medium text-red-600 dark:text-red-400 text-right text-sm">- {formatCurrency(details.deductions.bpjs_tk_jht)}</td>
                                             </tr>
                                         )}
-                                        {selectedPayroll.details?.deductions?.pph21 > 0 && (
+                                        {details?.deductions?.pph21 > 0 && (
                                             <tr>
                                                 <td className="p-3 bg-gray-50 dark:bg-gray-800 w-2/3 pl-8 text-sm text-gray-600 dark:text-gray-400">PPh 21</td>
-                                                <td className="p-3 font-medium text-red-600 dark:text-red-400 text-right text-sm">- {formatCurrency(selectedPayroll.details.deductions.pph21)}</td>
+                                                <td className="p-3 font-medium text-red-600 dark:text-red-400 text-right text-sm">- {formatCurrency(details.deductions.pph21)}</td>
                                             </tr>
                                         )}
-                                        {selectedPayroll.details?.deductions?.bpjs_tk_jp > 0 && (
+                                        {details?.deductions?.bpjs_tk_jp > 0 && (
                                             <tr>
                                                 <td className="p-3 bg-gray-50 dark:bg-gray-800 w-2/3 pl-8 text-sm text-gray-600 dark:text-gray-400">BPJS TK JP (1%)</td>
-                                                <td className="p-3 font-medium text-red-600 dark:text-red-400 text-right text-sm">- {formatCurrency(selectedPayroll.details.deductions.bpjs_tk_jp)}</td>
+                                                <td className="p-3 font-medium text-red-600 dark:text-red-400 text-right text-sm">- {formatCurrency(details.deductions.bpjs_tk_jp)}</td>
                                             </tr>
                                         )}
-                                        {selectedPayroll.details?.deductions?.cash_advance > 0 && (
+                                        {details?.deductions?.cash_advance > 0 && (
                                             <tr>
                                                 <td className="p-3 bg-gray-50 dark:bg-gray-800 w-2/3 pl-8 text-sm text-gray-600 dark:text-gray-400">Potongan Kasbon</td>
-                                                <td className="p-3 font-medium text-red-600 dark:text-red-400 text-right text-sm">- {formatCurrency(selectedPayroll.details.deductions.cash_advance)}</td>
+                                                <td className="p-3 font-medium text-red-600 dark:text-red-400 text-right text-sm">- {formatCurrency(details.deductions.cash_advance)}</td>
                                             </tr>
                                         )}
-                                        {selectedPayroll.details?.deductions?.loan_installment > 0 && (
+                                        {details?.deductions?.loan_installment > 0 && (
                                             <tr>
                                                 <td className="p-3 bg-gray-50 dark:bg-gray-800 w-2/3 pl-8 text-sm text-gray-600 dark:text-gray-400">Cicilan Pinjaman</td>
-                                                <td className="p-3 font-medium text-red-600 dark:text-red-400 text-right text-sm">- {formatCurrency(selectedPayroll.details.deductions.loan_installment)}</td>
+                                                <td className="p-3 font-medium text-red-600 dark:text-red-400 text-right text-sm">- {formatCurrency(details.deductions.loan_installment)}</td>
                                             </tr>
                                         )}
                                         <tr className="bg-gray-100 dark:bg-gray-700">
@@ -327,7 +329,8 @@ export default function PayrollIndex({ auth }) {
                             </a>
                         </div>
                     </div>
-                )}
+                    );
+                })()}
             </Modal>
         </AuthenticatedLayout>
     );
