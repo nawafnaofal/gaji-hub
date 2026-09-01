@@ -232,6 +232,18 @@ export default function PayrollIndex({ auth }) {
                                             <td className="p-3 bg-gray-50 dark:bg-gray-800 dark:text-gray-300 w-2/3">Gaji Pokok</td>
                                             <td className="p-3 font-medium text-right dark:text-gray-200">{formatCurrency(selectedPayroll.total_basic)}</td>
                                         </tr>
+                                        {details?.allowances?.transport > 0 && (
+                                            <tr>
+                                                <td className="p-3 bg-gray-50 dark:bg-gray-800 w-2/3 pl-8 text-sm text-gray-600 dark:text-gray-400">Tunjangan Transportasi</td>
+                                                <td className="p-3 font-medium text-right text-sm dark:text-gray-300">{formatCurrency(details.allowances.transport)}</td>
+                                            </tr>
+                                        )}
+                                        {details?.allowances?.meal > 0 && (
+                                            <tr>
+                                                <td className="p-3 bg-gray-50 dark:bg-gray-800 w-2/3 pl-8 text-sm text-gray-600 dark:text-gray-400">Tunjangan Makan</td>
+                                                <td className="p-3 font-medium text-right text-sm dark:text-gray-300">{formatCurrency(details.allowances.meal)}</td>
+                                            </tr>
+                                        )}
                                         {details?.allowances?.overtime > 0 && (
                                             <tr>
                                                 <td className="p-3 bg-gray-50 dark:bg-gray-800 w-2/3 pl-8 text-sm text-gray-600 dark:text-gray-400">Uang Lembur (Overtime)</td>
