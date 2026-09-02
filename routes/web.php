@@ -197,6 +197,11 @@ Route::middleware('auth')->prefix('api/v1')->group(function () {
         Route::get('/reports/overtime', [\App\Http\Controllers\ReportController::class, 'overtime']);
         Route::get('/reports/kpi', [\App\Http\Controllers\ReportController::class, 'kpi']);
 
+        // Resignations & Offboarding
+        Route::get('/resignations', [\App\Http\Controllers\ResignationController::class, 'index']);
+        Route::post('/resignations', [\App\Http\Controllers\ResignationController::class, 'store']);
+        Route::put('/resignations/{id}', [\App\Http\Controllers\ResignationController::class, 'update']);
+
         // Company Settings - signature upload
         Route::post('/settings/signature', [\App\Http\Controllers\Api\CompanySettingController::class, 'uploadSignature']);
     });

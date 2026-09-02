@@ -116,11 +116,16 @@ class AttendanceController extends Controller
             }
         }
 
-        // Determine status dynamically based on WorkSchedule
+        // Determine status dynamically based on WorkSchedule or EmployeeShift (Roster)
         $targetTime = '08:00:00';
         $tolerance = 0;
         
-        if ($employee->workSchedule) {
+        $todayShift = \App\Models\EmployeeShift::where('employee_id', $employee->id)->where('date', $today)->first();
+
+        if ($todayShift && $todayShift->workSchedule) {
+            $targetTime = $todayShift->workSchedule->clock_in_time;
+            $tolerance = $todayShift->workSchedule->late_tolerance_minutes ?? 0;
+        } elseif ($employee->workSchedule) {
             $targetTime = $employee->workSchedule->clock_in_time;
             $tolerance = $employee->workSchedule->late_tolerance_minutes ?? 0;
         }
