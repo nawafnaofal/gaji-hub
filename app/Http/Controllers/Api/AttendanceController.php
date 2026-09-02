@@ -116,8 +116,17 @@ class AttendanceController extends Controller
             }
         }
 
-        // Determine status (Late if after 08:00:00)
-        $status = $currentTime > '08:00:00' ? 'late' : 'present';
+        // Determine status dynamically based on WorkSchedule
+        $targetTime = '08:00:00';
+        $tolerance = 0;
+        
+        if ($employee->workSchedule) {
+            $targetTime = $employee->workSchedule->clock_in_time;
+            $tolerance = $employee->workSchedule->late_tolerance_minutes ?? 0;
+        }
+
+        $limitTime = Carbon::createFromFormat('H:i:s', $targetTime)->addMinutes($tolerance)->format('H:i:s');
+        $status = $currentTime > $limitTime ? 'late' : 'present';
 
         $attendance = Attendance::updateOrCreate(
             ['employee_id' => $employee->id, 'date' => $today],

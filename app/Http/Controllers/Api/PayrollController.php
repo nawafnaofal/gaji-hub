@@ -141,14 +141,15 @@ class PayrollController extends Controller
                 
                 $totalAllowance += $reimbursements;
 
-                // Ambil uang lembur (Overtime) - misal rate Rp 25.000 / jam
+                // Ambil uang lembur (Overtime) - rate Depnaker = Gaji Pokok / 173
                 $overtimes = Overtime::where('employee_id', $emp->id)
                     ->where('status', 'approved')
                     ->whereMonth('date', $month)
                     ->whereYear('date', $year)
                     ->sum('duration_hours');
                 
-                $overtimePay = $overtimes * 25000;
+                $overtimeRate = round($basicSalary / 173);
+                $overtimePay = $overtimes * $overtimeRate;
                 $totalAllowance += $overtimePay;
 
                 // Tunjangan Kehadiran (Transportasi & Makan)
