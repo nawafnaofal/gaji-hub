@@ -109,9 +109,17 @@ Route::get('/work-schedules', function () {
     return Inertia::render('WorkSchedule/Index');
 })->middleware(['auth', 'verified', 'role:admin,hr'])->name('work-schedules');
 
+Route::get('/work-schedules/roster', function () {
+    return Inertia::render('WorkSchedule/Roster');
+})->middleware(['auth', 'verified', 'role:admin,hr'])->name('work-schedules.roster');
+
 Route::get('/reports', function () {
     return Inertia::render('Report/Index');
 })->middleware(['auth', 'verified', 'role:admin,hr'])->name('reports');
+
+Route::get('/resignations', function () {
+    return Inertia::render('Resignation/Index');
+})->middleware(['auth', 'verified', 'role:admin,hr'])->name('resignations');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -159,6 +167,12 @@ Route::middleware('auth')->prefix('api/v1')->group(function () {
         
         Route::get('/salary-components', [\App\Http\Controllers\Api\SalaryComponentController::class, 'index']);
         Route::post('/salary-components', [\App\Http\Controllers\Api\SalaryComponentController::class, 'store']);
+
+        // Work Schedule & Shift Roster
+        Route::get('/work-schedules', [\App\Http\Controllers\WorkScheduleController::class, 'index']);
+        Route::post('/work-schedules', [\App\Http\Controllers\WorkScheduleController::class, 'store']);
+        Route::get('/employee-shifts', [\App\Http\Controllers\WorkScheduleController::class, 'getShifts']);
+        Route::post('/employee-shifts', [\App\Http\Controllers\WorkScheduleController::class, 'assignShift']);
         
         Route::put('/leaves/{id}', [\App\Http\Controllers\Api\LeaveController::class, 'update']);
         Route::put('/reimbursements/{id}', [\App\Http\Controllers\Api\ReimbursementController::class, 'update']);

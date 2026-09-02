@@ -84,4 +84,33 @@ class WorkScheduleController extends Controller
 
         return response()->json(['success' => true, 'message' => 'Jadwal berhasil diassign.']);
     }
+
+    public function getShifts(Request $request)
+    {
+        $month = $request->query('month', date('m'));
+        $year = $request->query('year', date('Y'));
+
+        $shifts = \App\Models\EmployeeShift::with(['employee.user', 'workSchedule'])
+            ->whereMonth('date', $month)
+            ->whereYear('date', $year)
+            ->get();
+
+        return response()->json(['success' => true, 'data' => $shifts]);
+    }
+
+    public function assignShift(Request $request)
+    {
+        $request->validate([
+            'employee_id' => 'required|exists:employees,id',
+            'work_schedule_id' => 'required|exists:work_schedules,id',
+            'date' => 'required|date'
+        ]);
+
+        $shift = \App\Models\EmployeeShift::updateOrCreate(
+            ['employee_id' => $request->employee_id, 'date' => $request->date],
+            ['work_schedule_id' => $request->work_schedule_id]
+        );
+
+        return response()->json(['success' => true, 'data' => $shift, 'message' => 'Roster shift berhasil diassign.']);
+    }
 }
