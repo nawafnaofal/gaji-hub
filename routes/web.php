@@ -161,6 +161,7 @@ Route::middleware('auth')->prefix('api/v1')->group(function () {
         Route::post('/payrolls/{id}/approve', [\App\Http\Controllers\Api\PayrollController::class, 'approve']);
         Route::post('/payrolls/{id}/disburse', [\App\Http\Controllers\Api\PayrollController::class, 'disburse']);
         Route::get('/dashboard/stats', [\App\Http\Controllers\Api\DashboardController::class, 'stats']);
+        Route::get('/dashboard/approvals', [\App\Http\Controllers\Api\DashboardController::class, 'getApprovals']);
 
         Route::get('/settings', [\App\Http\Controllers\Api\CompanySettingController::class, 'index']);
         Route::post('/settings', [\App\Http\Controllers\Api\CompanySettingController::class, 'store']);

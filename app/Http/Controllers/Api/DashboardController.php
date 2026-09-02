@@ -145,4 +145,115 @@ class DashboardController extends Controller
             ]
         ]);
     }
+
+    public function getApprovals(): JsonResponse
+    {
+        $user = \Illuminate\Support\Facades\Auth::user();
+        $employeeId = $user->employee ? $user->employee->id : null;
+        $role = $user->role;
+
+        $approvals = [];
+
+        // 1. Leaves
+        $leavesQuery = \App\Models\Leave::with('employee.user');
+        if ($role === 'hr' || $role === 'admin') {
+            $leavesQuery->where('status', 'pending_hr');
+        } else {
+            $leavesQuery->where('status', 'pending_manager')
+                ->whereHas('employee', function($q) use ($employeeId) {
+                    $q->where('manager_id', $employeeId);
+                });
+        }
+        $leaves = $leavesQuery->get()->map(function($l) {
+            return [
+                'id' => $l->id,
+                'type_label' => 'Cuti',
+                'module' => 'leave',
+                'employee_name' => $l->employee->user->name,
+                'details' => $l->leave_type . ' (' . $l->start_date . ' s/d ' . $l->end_date . ')',
+                'created_at' => $l->created_at->format('Y-m-d'),
+                'status' => $l->status
+            ];
+        });
+        $approvals = array_merge($approvals, $leaves->toArray());
+
+        // 2. Overtimes
+        $overtimeQuery = \App\Models\Overtime::with('employee.user');
+        if ($role === 'hr' || $role === 'admin') {
+            $overtimeQuery->where('status', 'pending_hr');
+        } else {
+            $overtimeQuery->where('status', 'pending_manager')
+                ->whereHas('employee', function($q) use ($employeeId) {
+                    $q->where('manager_id', $employeeId);
+                });
+        }
+        $overtimes = $overtimeQuery->get()->map(function($o) {
+            return [
+                'id' => $o->id,
+                'type_label' => 'Lembur',
+                'module' => 'overtime',
+                'employee_name' => $o->employee->user->name,
+                'details' => $o->date . ' (' . $o->start_time . ' - ' . $o->end_time . ')',
+                'created_at' => $o->created_at->format('Y-m-d'),
+                'status' => $o->status
+            ];
+        });
+        $approvals = array_merge($approvals, $overtimes->toArray());
+
+        // 3. Reimbursements
+        $reimbQuery = \App\Models\Reimbursement::with('employee.user');
+        if ($role === 'hr' || $role === 'admin') {
+            $reimbQuery->where('status', 'pending_hr');
+        } else {
+            $reimbQuery->where('status', 'pending_manager')
+                ->whereHas('employee', function($q) use ($employeeId) {
+                    $q->where('manager_id', $employeeId);
+                });
+        }
+        $reimbursements = $reimbQuery->get()->map(function($r) {
+            return [
+                'id' => $r->id,
+                'type_label' => 'Reimbursement',
+                'module' => 'reimbursement',
+                'employee_name' => $r->employee->user->name,
+                'details' => $r->type . ' - Rp ' . number_format($r->amount, 0, ',', '.'),
+                'created_at' => $r->created_at->format('Y-m-d'),
+                'status' => $r->status
+            ];
+        });
+        $approvals = array_merge($approvals, $reimbursements->toArray());
+
+        // 4. Cash Advances
+        $cashQuery = \App\Models\CashAdvance::with('employee.user');
+        if ($role === 'hr' || $role === 'admin') {
+            $cashQuery->where('status', 'pending_hr');
+        } else {
+            $cashQuery->where('status', 'pending_manager')
+                ->whereHas('employee', function($q) use ($employeeId) {
+                    $q->where('manager_id', $employeeId);
+                });
+        }
+        $cashes = $cashQuery->get()->map(function($c) {
+            return [
+                'id' => $c->id,
+                'type_label' => 'Kasbon',
+                'module' => 'cash_advance',
+                'employee_name' => $c->employee->user->name,
+                'details' => 'Rp ' . number_format($c->amount, 0, ',', '.') . ' (' . $c->date . ')',
+                'created_at' => $c->created_at->format('Y-m-d'),
+                'status' => $c->status
+            ];
+        });
+        $approvals = array_merge($approvals, $cashes->toArray());
+
+        // Sort by created_at DESC
+        usort($approvals, function($a, $b) {
+            return strtotime($b['created_at']) - strtotime($a['created_at']);
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $approvals
+        ]);
+    }
 }

@@ -123,22 +123,37 @@ export default function AuthenticatedLayout({ header, children }) {
 
                     {isAdminOrHr && (
                         <>
-                            <SidebarGroup title="Karyawan & HR" />
+                            <SidebarGroup title="Core HR (Kepegawaian)" />
                             <SidebarLink href={route('employees')} active={route().current('employees')} icon={Users}>
-                        Data Karyawan
-                    </SidebarLink>
-                    <SidebarLink href={route('org-chart')} active={route().current('org-chart')} icon={Network}>
-                        Struktur Organisasi
-                    </SidebarLink>
-                    <SidebarLink href={route('attendances')} active={route().current('attendances')} icon={CalendarCheck}>
+                                Data Karyawan
+                            </SidebarLink>
+                            <SidebarLink href={route('org-chart')} active={route().current('org-chart')} icon={Network}>
+                                Struktur Organisasi
+                            </SidebarLink>
+
+                            <SidebarGroup title="Time & Attendance" />
+                            <SidebarLink href={route('attendances')} active={route().current('attendances')} icon={CalendarCheck}>
                                 Rekap Absensi
                             </SidebarLink>
+                            <SidebarLink href={route('work-schedules')} active={route().current('work-schedules')} icon={AlarmClock}>
+                                Master Jadwal Kerja
+                            </SidebarLink>
+                            <SidebarLink href={route('work-schedules.roster')} active={route().current('work-schedules.roster')} icon={CalendarClock}>
+                                Roster Shift Karyawan
+                            </SidebarLink>
+                            <SidebarLink href={route('holidays')} active={route().current('holidays')} icon={Calendar}>
+                                Hari Libur
+                            </SidebarLink>
+
+                            <SidebarGroup title="Payroll & Finance" />
                             <SidebarLink href={route('payroll')} active={route().current('payroll')} icon={WalletCards}>
                                 Tabel Payroll
                             </SidebarLink>
                             <SidebarLink href={route('salary-components')} active={route().current('salary-components')} icon={Receipt}>
                                 Komponen Gaji
                             </SidebarLink>
+
+                            <SidebarGroup title="Talent Management" />
                             <SidebarLink href={route('performance-reviews')} active={route().current('performance-reviews')} icon={Star}>
                                 Penilaian Kinerja (KPI)
                             </SidebarLink>
@@ -148,20 +163,13 @@ export default function AuthenticatedLayout({ header, children }) {
                             <SidebarLink href={route('recruitment')} active={route().current('recruitment')} icon={Briefcase}>
                                 Recruitment & ATS
                             </SidebarLink>
-                            <SidebarLink href={route('work-schedules')} active={route().current('work-schedules')} icon={AlarmClock}>
-                                Master Jadwal Kerja
-                            </SidebarLink>
-                            <SidebarLink href={route('work-schedules.roster')} active={route().current('work-schedules.roster')} icon={CalendarClock}>
-                                Roster Shift Karyawan
-                            </SidebarLink>
                             <SidebarLink href={route('resignations')} active={route().current('resignations')} icon={UserMinus}>
                                 Offboarding & Pesangon
                             </SidebarLink>
+
+                            <SidebarGroup title="Sistem & Laporan" />
                             <SidebarLink href={route('reports')} active={route().current('reports')} icon={BarChart3}>
                                 Pusat Laporan
-                            </SidebarLink>
-                            <SidebarLink href={route('holidays')} active={route().current('holidays')} icon={Calendar}>
-                                Hari Libur
                             </SidebarLink>
                             <SidebarLink href={route('settings')} active={route().current('settings')} icon={SettingsIcon}>
                                 Pengaturan

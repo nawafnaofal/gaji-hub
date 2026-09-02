@@ -10,6 +10,7 @@ import { toast, Toaster } from 'react-hot-toast';
 export default function Dashboard() {
     const user = usePage().props.auth.user;
     const [stats, setStats] = useState(null);
+    const [approvals, setApprovals] = useState([]);
     const [location, setLocation] = useState(null);
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
@@ -37,8 +38,17 @@ export default function Dashboard() {
             .catch(err => console.error(err));
     };
 
+    const fetchApprovals = () => {
+        if (user.role !== 'employee' || user.employee?.is_manager) {
+            axios.get('/api/v1/dashboard/approvals')
+                .then(res => setApprovals(res.data.data))
+                .catch(err => console.error(err));
+        }
+    };
+
     useEffect(() => {
         fetchStats();
+        fetchApprovals();
     }, []);
 
     useEffect(() => {
@@ -390,21 +400,54 @@ export default function Dashboard() {
                             </div>
 
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                                <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                                    <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Distribusi Karyawan Per Departemen</h3>
-                                    <div className="h-80 w-full">
-                                        {stats.department_dist ? (
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <BarChart data={stats.department_dist}>
-                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" opacity={0.2} />
-                                                    <XAxis dataKey="name" stroke="#6B7280" />
-                                                    <YAxis stroke="#6B7280" allowDecimals={false} />
-                                                    <Tooltip cursor={{fill: 'rgba(139, 92, 246, 0.1)'}} />
-                                                    <Bar dataKey="value" fill="#8B5CF6" radius={[4, 4, 0, 0]} name="Karyawan" />
-                                                </BarChart>
-                                            </ResponsiveContainer>
-                                        ) : (
-                                            <p className="text-gray-500">Data belum tersedia.</p>
+                                <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6 flex flex-col">
+                                    <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">
+                                        <Clock size={20} className="text-orange-500" /> Pusat Persetujuan (Needs Approval)
+                                    </h3>
+                                    <div className="flex-1 overflow-y-auto max-h-80 custom-scrollbar pr-2 space-y-3">
+                                        {approvals.length > 0 ? approvals.map((approval) => (
+                                            <div key={`${approval.module}-${approval.id}`} className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <div>
+                                                        <span className="text-xs font-semibold px-2 py-1 rounded bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                                                            {approval.type_label}
+                                                        </span>
+                                                        <p className="mt-1 font-semibold text-gray-800 dark:text-gray-200">{approval.employee_name}</p>
+                                                    </div>
+                                                    <span className="text-xs text-gray-500">{approval.created_at}</span>
+                                                </div>
+                                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{approval.details}</p>
+                                                <div className="flex gap-2">
+                                                    <button 
+                                                        onClick={() => {
+                                                            toast.loading('Menyetujui...', {id: 'approve'});
+                                                            axios.put(`/api/v1/${approval.module === 'leave' ? 'leaves' : approval.module === 'cash_advance' ? 'cash-advances' : approval.module + 's'}/${approval.id}/status`, { status: user.role === 'employee' ? 'pending_hr' : 'approved' })
+                                                                .then(() => { toast.success('Disetujui', {id: 'approve'}); fetchApprovals(); fetchStats(); })
+                                                                .catch(err => toast.error('Gagal menyetujui', {id: 'approve'}));
+                                                        }}
+                                                        className="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs py-1.5 rounded transition"
+                                                    >
+                                                        Approve
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => {
+                                                            if(!confirm('Tolak pengajuan ini?')) return;
+                                                            toast.loading('Menolak...', {id: 'reject'});
+                                                            axios.put(`/api/v1/${approval.module === 'leave' ? 'leaves' : approval.module === 'cash_advance' ? 'cash-advances' : approval.module + 's'}/${approval.id}/status`, { status: 'rejected' })
+                                                                .then(() => { toast.success('Ditolak', {id: 'reject'}); fetchApprovals(); fetchStats(); })
+                                                                .catch(err => toast.error('Gagal menolak', {id: 'reject'}));
+                                                        }}
+                                                        className="flex-1 bg-red-600 hover:bg-red-700 text-white text-xs py-1.5 rounded transition"
+                                                    >
+                                                        Reject
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )) : (
+                                            <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500 py-10">
+                                                <FileText size={48} className="mb-2 opacity-50" />
+                                                <p>Tidak ada pengajuan tertunda.</p>
+                                            </div>
                                         )}
                                     </div>
                                 </div>
