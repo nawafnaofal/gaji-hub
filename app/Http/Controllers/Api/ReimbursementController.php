@@ -58,8 +58,24 @@ class ReimbursementController extends Controller
             'amount' => $request->amount,
             'description' => $request->description,
             'attachment' => $attachmentPath,
-            'status' => $employee->manager_id ? 'pending_manager' : 'pending_hr'
         ]);
+
+        $status = 'pending_hr';
+        if ($employee->manager_id) {
+            $status = 'pending_manager';
+            // Approval Delegation: Jika manajer cuti hari ini, otomatis eskalasi ke HR
+            $isManagerOnLeave = \App\Models\Leave::where('employee_id', $employee->manager_id)
+                ->where('status', 'approved')
+                ->where('start_date', '<=', \Carbon\Carbon::today()->toDateString())
+                ->where('end_date', '>=', \Carbon\Carbon::today()->toDateString())
+                ->exists();
+                
+            if ($isManagerOnLeave) {
+                $status = 'pending_hr';
+            }
+        }
+        $claim->status = $status;
+        $claim->save();
 
         $this->notifyManagerOrHR(
             $employee,

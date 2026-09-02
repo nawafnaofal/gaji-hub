@@ -94,6 +94,12 @@ export default function PayrollIndex({ auth }) {
                                 <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200">Tabel Payroll Pegawai</h1>
                                 <div className="flex gap-3">
                                     <a 
+                                        href={`/api/v1/payrolls/export/bank?month=${month}&year=${year}`} target="_blank" rel="noopener noreferrer"
+                                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded flex items-center gap-2 transition"
+                                    >
+                                        <Download size={18} /> Transfer Bank
+                                    </a>
+                                    <a 
                                         href="/api/v1/payrolls/export" target="_blank" rel="noopener noreferrer"
                                         className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded flex items-center gap-2 transition"
                                     >

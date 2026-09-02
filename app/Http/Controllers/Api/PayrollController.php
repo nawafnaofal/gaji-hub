@@ -372,6 +372,48 @@ class PayrollController extends Controller
         
         return $pdf->download("Slip_Gaji_{$payroll->employee->user->name}_{$payroll->period_month}_{$payroll->period_year}.pdf");
     }
+    public function exportBankTransfer(Request $request)
+    {
+        $month = $request->query('month', date('m'));
+        $year = $request->query('year', date('Y'));
+
+        $payrolls = Payroll::with('employee.user')
+            ->whereIn('status', ['approved', 'paid'])
+            ->where('period_month', $month)
+            ->where('period_year', $year)
+            ->get();
+        
+        $fileName = "bank_transfer_payout_{$month}_{$year}.csv";
+        
+        $headers = array(
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=$fileName",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        );
+
+        $columns = array('Bank Name', 'Account Number', 'Account Holder Name', 'Amount', 'Description');
+
+        $callback = function() use($payrolls, $columns, $month, $year) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+
+            foreach ($payrolls as $payroll) {
+                $row['Bank Name']  = $payroll->employee->bank_name ?? 'Unknown';
+                $row['Account Number'] = $payroll->employee->bank_account ?? 'Unknown';
+                $row['Account Holder Name'] = $payroll->employee->user->name ?? 'Unknown';
+                $row['Amount']  = $payroll->net_salary;
+                $row['Description']  = "Gaji Bulan {$month} {$year}";
+
+                fputcsv($file, array($row['Bank Name'], $row['Account Number'], $row['Account Holder Name'], $row['Amount'], $row['Description']));
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
     
     public function exportCsv()
     {

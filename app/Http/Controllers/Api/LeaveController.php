@@ -92,8 +92,24 @@ class LeaveController extends Controller
             'end_date' => $request->end_date,
             'reason' => $request->reason,
             'attachment' => $attachmentPath,
-            'status' => $employee->manager_id ? 'pending_manager' : 'pending_hr'
         ]);
+
+        $status = 'pending_hr';
+        if ($employee->manager_id) {
+            $status = 'pending_manager';
+            // Approval Delegation: Jika manajer cuti hari ini, otomatis eskalasi ke HR
+            $isManagerOnLeave = \App\Models\Leave::where('employee_id', $employee->manager_id)
+                ->where('status', 'approved')
+                ->where('start_date', '<=', \Carbon\Carbon::today()->toDateString())
+                ->where('end_date', '>=', \Carbon\Carbon::today()->toDateString())
+                ->exists();
+                
+            if ($isManagerOnLeave) {
+                $status = 'pending_hr';
+            }
+        }
+        $leave->status = $status;
+        $leave->save();
 
         $this->notifyManagerOrHR(
             $employee,
