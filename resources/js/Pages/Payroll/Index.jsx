@@ -12,6 +12,8 @@ export default function PayrollIndex({ auth }) {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [selectedPayroll, setSelectedPayroll] = useState(null);
+    const [month, setMonth] = useState(new Date().getMonth() + 1);
+    const [year, setYear] = useState(new Date().getFullYear());
 
     const fetchPayrolls = async () => {
         setLoading(true);
