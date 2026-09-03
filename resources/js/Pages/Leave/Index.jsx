@@ -2,12 +2,16 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
-import { FileText, CheckCircle, XCircle, Eye } from 'lucide-react';
+import { FileText, CheckCircle, XCircle, Eye, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function LeaveIndex({ auth }) {
     const [leaves, setLeaves] = useState([]);
     const [loading, setLoading] = useState(true);
     const [previewUrl, setPreviewUrl] = useState(null);
+    const [viewMode, setViewMode] = useState('table');
+    const [calendarData, setCalendarData] = useState({ leaves: [], holidays: [] });
+    const [calMonth, setCalMonth] = useState(new Date().getMonth() + 1);
+    const [calYear, setCalYear] = useState(new Date().getFullYear());
 
     const [form, setForm] = useState({
         type: 'annual',
@@ -22,6 +26,23 @@ export default function LeaveIndex({ auth }) {
     useEffect(() => {
         fetchLeaves();
     }, []);
+
+    const fetchCalendarData = async () => {
+        try {
+            const res = await axios.get('/api/v1/leaves/calendar', {
+                params: { month: calMonth, year: calYear }
+            });
+            setCalendarData(res.data);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    useEffect(() => {
+        if (viewMode === 'calendar') {
+            fetchCalendarData();
+        }
+    }, [viewMode, calMonth, calYear]);
 
     const fetchLeaves = async () => {
         setLoading(true);
@@ -139,7 +160,116 @@ export default function LeaveIndex({ auth }) {
                     )}
 
                     <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                        <h3 className="text-lg font-bold mb-4 dark:text-white">Riwayat Pengajuan Cuti</h3>
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b dark:border-gray-700 pb-4">
+                            <h3 className="text-lg font-bold dark:text-white flex items-center gap-2">
+                                {viewMode === 'table' ? <FileText size={20} /> : <CalendarIcon size={20} className="text-blue-600" />}
+                                {viewMode === 'table' ? 'Riwayat Pengajuan Cuti' : `Kalender Cuti Tim (${['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][calMonth - 1]} ${calYear})`}
+                            </h3>
+                            <div className="flex items-center gap-3">
+                                {viewMode === 'calendar' && (
+                                    <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                                        <button
+                                            onClick={() => {
+                                                if (calMonth === 1) { setCalMonth(12); setCalYear(calYear - 1); }
+                                                else { setCalMonth(calMonth - 1); }
+                                            }}
+                                            className="p-1 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-600 dark:text-gray-300"
+                                        >
+                                            <ChevronLeft size={16} />
+                                        </button>
+                                        <span className="text-xs font-bold px-2 text-gray-700 dark:text-gray-300">
+                                            {calMonth} / {calYear}
+                                        </span>
+                                        <button
+                                            onClick={() => {
+                                                if (calMonth === 12) { setCalMonth(1); setCalYear(calYear + 1); }
+                                                else { setCalMonth(calMonth + 1); }
+                                            }}
+                                            className="p-1 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-600 dark:text-gray-300"
+                                        >
+                                            <ChevronRight size={16} />
+                                        </button>
+                                    </div>
+                                )}
+                                <div className="bg-gray-100 dark:bg-gray-700 p-1 rounded-xl flex gap-1">
+                                    <button
+                                        onClick={() => setViewMode('table')}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${viewMode === 'table' ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-600 dark:text-gray-300'}`}
+                                    >
+                                        Tabel Pengajuan
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode('calendar')}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${viewMode === 'calendar' ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-600 dark:text-gray-300'}`}
+                                    >
+                                        📅 Kalender Tim
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {viewMode === 'calendar' ? (
+                            <div>
+                                <div className="grid grid-cols-7 gap-px bg-gray-200 dark:bg-gray-700 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 text-xs">
+                                    {['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'].map((d, i) => (
+                                        <div key={d} className={`p-2 text-center font-bold uppercase ${i >= 5 ? 'bg-red-50 dark:bg-red-950/20 text-red-600' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}>
+                                            {d}
+                                        </div>
+                                    ))}
+
+                                    {(() => {
+                                        const daysInMonth = new Date(calYear, calMonth, 0).getDate();
+                                        const firstDayIndex = (new Date(calYear, calMonth - 1, 1).getDay() + 6) % 7; // Monday = 0
+                                        const cells = [];
+
+                                        // Padding previous month
+                                        for (let p = 0; p < firstDayIndex; p++) {
+                                            cells.push(<div key={`pad-${p}`} className="min-h-[90px] bg-gray-50/50 dark:bg-gray-800/40 p-1.5 opacity-40"></div>);
+                                        }
+
+                                        // Current month days
+                                        for (let d = 1; d <= daysInMonth; d++) {
+                                            const dateStr = `${calYear}-${String(calMonth).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                                            const dayOfWeek = (firstDayIndex + d - 1) % 7;
+                                            const isWeekend = dayOfWeek >= 5;
+
+                                            const dayLeaves = calendarData.leaves?.filter(l => l.start_date <= dateStr && l.end_date >= dateStr) || [];
+                                            const dayHolidays = calendarData.holidays?.filter(h => h.date === dateStr) || [];
+
+                                            cells.push(
+                                                <div key={d} className={`min-h-[90px] p-1.5 transition ${isWeekend ? 'bg-red-50/20 dark:bg-red-950/10' : 'bg-white dark:bg-gray-800'} hover:bg-blue-50/30 dark:hover:bg-blue-900/10 border-t border-gray-100 dark:border-gray-700/50`}>
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <span className={`text-xs font-bold ${isWeekend || dayHolidays.length > 0 ? 'text-red-600' : 'text-gray-800 dark:text-gray-200'}`}>
+                                                            {d}
+                                                        </span>
+                                                        {dayHolidays.length > 0 && (
+                                                            <span className="text-[9px] bg-red-100 dark:bg-red-900/40 text-red-600 font-bold px-1 rounded truncate max-w-[70px]">
+                                                                Libur
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="space-y-1 overflow-y-auto max-h-[60px] custom-scrollbar">
+                                                        {dayHolidays.map((h, hi) => (
+                                                            <div key={`h-${hi}`} className="text-[10px] p-1 bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 rounded font-medium truncate" title={h.name}>
+                                                                🎉 {h.name}
+                                                            </div>
+                                                        ))}
+                                                        {dayLeaves.map((l, li) => (
+                                                            <div key={`l-${li}`} className={`text-[10px] p-1 rounded font-medium truncate ${l.type === 'sick' ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200' : 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200'}`} title={`${l.employee_name} (${l.type}): ${l.reason}`}>
+                                                                👤 {l.employee_name.split(' ')[0]} ({l.type === 'sick' ? 'Sakit' : 'Cuti'})
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+
+                                        return cells;
+                                    })()}
+                                </div>
+                            </div>
+                        ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
@@ -210,6 +340,7 @@ export default function LeaveIndex({ auth }) {
                                 </tbody>
                             </table>
                         </div>
+                        )}
                     </div>
                 </div>
             </div>

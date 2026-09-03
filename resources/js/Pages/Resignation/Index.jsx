@@ -114,15 +114,24 @@ export default function Resignation({ auth }) {
                                                         {res.status}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4">
+                                                <td className="px-6 py-4 flex items-center gap-3">
                                                     {res.status === 'pending' && (
                                                         <button 
                                                             onClick={() => handleApprove(res.id)}
-                                                            className="text-green-600 hover:underline font-bold"
+                                                            className="text-green-600 hover:underline font-bold text-xs"
                                                         >
                                                             Approve
                                                         </button>
                                                     )}
+                                                    <a
+                                                        href={`/api/v1/employees/${res.employee_id}/paklaring`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="px-2.5 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 rounded text-xs font-semibold hover:underline flex items-center gap-1"
+                                                        title="Cetak Surat Paklaring (PDF)"
+                                                    >
+                                                        📄 Unduh Paklaring
+                                                    </a>
                                                 </td>
                                             </tr>
                                         ))}

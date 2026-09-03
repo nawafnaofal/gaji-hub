@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
-import { PlusCircle, Users, FileText, Trash2, Upload, Edit, Trash } from 'lucide-react';
+import { PlusCircle, Users, FileText, Trash2, Upload, Edit, Trash, FileCheck } from 'lucide-react';
 
 export default function EmployeeIndex({ auth }) {
     const [employees, setEmployees] = useState([]);
@@ -17,6 +17,9 @@ export default function EmployeeIndex({ auth }) {
     const [errors, setErrors] = useState({});
     const [expiringCount, setExpiringCount] = useState(0);
     const [filterExpiring, setFilterExpiring] = useState(false);
+    const [showImportModal, setShowImportModal] = useState(false);
+    const [importFile, setImportFile] = useState(null);
+    const [importing, setImporting] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -181,6 +184,27 @@ export default function EmployeeIndex({ auth }) {
         }
     };
 
+    const handleImportSubmit = async (e) => {
+        e.preventDefault();
+        if (!importFile) return;
+        setImporting(true);
+        const data = new FormData();
+        data.append('file', importFile);
+        try {
+            const res = await axios.post('/api/v1/employees/import-csv', data, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            alert(res.data.message);
+            setShowImportModal(false);
+            setImportFile(null);
+            fetchEmployees();
+        } catch (err) {
+            alert(err.response?.data?.message || 'Gagal mengimpor file CSV.');
+        } finally {
+            setImporting(false);
+        }
+    };
+
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -222,12 +246,20 @@ export default function EmployeeIndex({ auth }) {
                                 <h3 className="text-lg font-bold flex items-center gap-2">
                                     <Users size={20} /> Data Induk Karyawan {filterExpiring && <span className="text-xs font-normal text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 rounded-full">(Filter Kontrak Berakhir)</span>}
                                 </h3>
-                                <button 
-                                    onClick={openAddModal}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center gap-2 transition"
-                                >
-                                    <PlusCircle size={18} /> Tambah Karyawan
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    <button 
+                                        onClick={() => setShowImportModal(true)}
+                                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded text-sm font-semibold flex items-center gap-1.5 transition shadow-sm"
+                                    >
+                                        <Upload size={16} /> Import CSV
+                                    </button>
+                                    <button 
+                                        onClick={openAddModal}
+                                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-semibold flex items-center gap-2 transition shadow-sm"
+                                    >
+                                        <PlusCircle size={18} /> Tambah Karyawan
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="overflow-x-auto">
@@ -281,12 +313,21 @@ export default function EmployeeIndex({ auth }) {
                                                         <div className="text-xs text-gray-500">Bank: {emp.bank_name || '-'}</div>
                                                     </td>
                                                     <td className="p-4">
-                                                        <div className="flex items-center gap-2">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <a 
+                                                                href={`/api/v1/employees/${emp.id}/active-letter`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 flex items-center gap-1 text-xs font-semibold transition bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded"
+                                                                title="Unduh Surat Keterangan Karyawan Aktif (PDF)"
+                                                            >
+                                                                <FileCheck size={14} /> Surat Aktif
+                                                            </a>
                                                             <button 
                                                                 onClick={() => openDocModal(emp)} 
-                                                                className="text-blue-600 hover:text-blue-800 flex items-center gap-1 text-sm font-medium transition bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded"
+                                                                className="text-blue-600 hover:text-blue-800 flex items-center gap-1 text-xs font-medium transition bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded"
                                                             >
-                                                                <FileText size={16} /> Dokumen
+                                                                <FileText size={14} /> Dokumen
                                                             </button>
                                                             <button 
                                                                 onClick={() => handleEdit(emp)} 
@@ -544,6 +585,61 @@ export default function EmployeeIndex({ auth }) {
                                 )}
                             </div>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Import CSV */}
+            {showImportModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+                        <div className="p-5 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-800/80">
+                            <h3 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                <Upload size={18} className="text-emerald-600 dark:text-emerald-400" />
+                                Import Data Karyawan (CSV)
+                            </h3>
+                            <button onClick={() => setShowImportModal(false)} className="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+                        </div>
+                        <form onSubmit={handleImportSubmit} className="p-5 space-y-4">
+                            <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs text-emerald-800 dark:text-emerald-300">
+                                <p className="font-bold mb-1">Panduan Format File:</p>
+                                <p>Pastikan berkas CSV menggunakan pemisah koma. Gunakan template resmi kami agar urutan kolom tepat:</p>
+                                <a
+                                    href="/api/v1/employees/template/download"
+                                    className="mt-2 inline-flex items-center gap-1 font-bold text-emerald-700 dark:text-emerald-400 underline"
+                                >
+                                    📥 Unduh Template CSV Karyawan
+                                </a>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold uppercase text-gray-700 dark:text-gray-300 mb-1.5">Pilih Berkas CSV</label>
+                                <input
+                                    type="file"
+                                    required
+                                    accept=".csv,text/csv"
+                                    onChange={e => setImportFile(e.target.files[0])}
+                                    className="block w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 dark:file:bg-emerald-900/40 dark:file:text-emerald-300"
+                                />
+                            </div>
+
+                            <div className="flex justify-end gap-2 pt-3 border-t dark:border-gray-700">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowImportModal(false)}
+                                    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 text-xs font-semibold rounded-xl text-gray-700 dark:text-gray-300 transition"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={importing}
+                                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-xs font-semibold rounded-xl text-white shadow-sm disabled:opacity-50 transition"
+                                >
+                                    {importing ? 'Mengimpor Data...' : 'Mulai Import'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

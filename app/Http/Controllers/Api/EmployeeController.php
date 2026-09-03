@@ -169,4 +169,101 @@ class EmployeeController extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
+
+    public function downloadTemplate()
+    {
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="template_import_karyawan.csv"',
+        ];
+
+        $callback = function () {
+            $handle = fopen('php://output', 'w');
+            fputs($handle, "\xEF\xBB\xBF");
+            fputcsv($handle, ['Nama', 'Email', 'NIK_Karyawan', 'Departemen', 'Jabatan', 'Gaji_Pokok', 'Tanggal_Masuk', 'Status_Karyawan', 'No_HP']);
+            fputcsv($handle, ['Ahmad Pratama', 'ahmad.pratama@example.com', 'EMP-001', 'Technology', 'Backend Developer', '8500000', '2025-01-10', 'permanent', '081234567890']);
+            fputcsv($handle, ['Siti Rahma', 'siti.rahma@example.com', 'EMP-002', 'Human Resources', 'HR Specialist', '7000000', '2025-02-01', 'contract', '081298765432']);
+            fclose($handle);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function importCsv(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:csv,txt|max:5120'
+        ]);
+
+        $file = $request->file('file');
+        $handle = fopen($file->getRealPath(), 'r');
+        
+        $header = fgetcsv($handle);
+
+        $imported = 0;
+        $skipped = 0;
+
+        DB::beginTransaction();
+        try {
+            while (($row = fgetcsv($handle, 1000, ',')) !== false) {
+                if (count($row) < 5 || empty(trim($row[0])) || empty(trim($row[1]))) {
+                    continue;
+                }
+
+                $name = trim($row[0]);
+                $email = trim($row[1]);
+                $code = trim($row[2] ?? '');
+                $department = trim($row[3] ?? 'General');
+                $jobTitle = trim($row[4] ?? 'Staff');
+                $basicSalary = floatval(preg_replace('/[^0-9]/', '', $row[5] ?? '5000000')) ?: 5000000;
+                $joinDate = !empty(trim($row[6] ?? '')) ? trim($row[6]) : \Carbon\Carbon::today()->toDateString();
+                $employmentStatus = in_array(strtolower(trim($row[7] ?? '')), ['permanent', 'contract', 'probation']) ? strtolower(trim($row[7])) : 'permanent';
+                $phone = trim($row[8] ?? '');
+
+                if (User::where('email', $email)->exists() || (!empty($code) && Employee::where('employee_code', $code)->exists())) {
+                    $skipped++;
+                    continue;
+                }
+
+                if (empty($code)) {
+                    $code = 'EMP-' . strtoupper(substr(uniqid(), -5));
+                }
+
+                $user = User::create([
+                    'name' => $name,
+                    'email' => $email,
+                    'password' => Hash::make('password123'),
+                    'role' => 'employee'
+                ]);
+                $user->assignRole('employee');
+
+                Employee::create([
+                    'user_id' => $user->id,
+                    'department_id' => $department,
+                    'employee_code' => $code,
+                    'basic_salary' => $basicSalary,
+                    'join_date' => $joinDate,
+                    'job_title' => $jobTitle,
+                    'employment_status' => $employmentStatus,
+                    'phone' => $phone,
+                    'annual_leave_quota' => 12,
+                    'tax_status' => 'TK/0'
+                ]);
+
+                $imported++;
+            }
+
+            DB::commit();
+            fclose($handle);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Proses import selesai: {$imported} karyawan berhasil ditambahkan, {$skipped} dilewati (duplikat email/NIK)."
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            if (is_resource($handle)) fclose($handle);
+            return response()->json(['success' => false, 'message' => 'Gagal membaca berkas CSV: ' . $e->getMessage()], 500);
+        }
+    }
 }

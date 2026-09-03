@@ -32,6 +32,44 @@ class LeaveController extends Controller
         return response()->json(['success' => true, 'data' => $leaves]);
     }
 
+    public function calendar(Request $request)
+    {
+        $month = $request->query('month', Carbon::now()->month);
+        $year = $request->query('year', Carbon::now()->year);
+
+        $leaves = Leave::with('employee.user')
+            ->where('status', 'approved')
+            ->where(function($q) use ($month, $year) {
+                $q->where(function($sub) use ($month, $year) {
+                    $sub->whereMonth('start_date', $month)->whereYear('start_date', $year);
+                })->orWhere(function($sub) use ($month, $year) {
+                    $sub->whereMonth('end_date', $month)->whereYear('end_date', $year);
+                });
+            })
+            ->get()
+            ->map(function($l) {
+                return [
+                    'id' => $l->id,
+                    'employee_name' => $l->employee->user->name ?? 'Karyawan',
+                    'department' => $l->employee->department_id ?? '-',
+                    'type' => $l->type,
+                    'start_date' => $l->start_date,
+                    'end_date' => $l->end_date,
+                    'reason' => $l->reason
+                ];
+            });
+
+        $holidays = \App\Models\Holiday::whereMonth('date', $month)
+            ->whereYear('date', $year)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'leaves' => $leaves,
+            'holidays' => $holidays
+        ]);
+    }
+
     // Employee applies for leave
     public function store(Request $request)
     {

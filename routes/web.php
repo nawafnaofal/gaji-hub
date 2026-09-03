@@ -125,6 +125,14 @@ Route::get('/resignations', function () {
     return Inertia::render('Resignation/Index');
 })->middleware(['auth', 'verified', 'role:admin,hr'])->name('resignations');
 
+Route::get('/warning-letters', function () {
+    return Inertia::render('WarningLetter/Index');
+})->middleware(['auth', 'verified'])->name('warning-letters');
+
+Route::get('/salary-simulator', function () {
+    return Inertia::render('SalarySimulator/Index');
+})->middleware(['auth', 'verified', 'role:admin,hr'])->name('salary-simulator');
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -223,6 +231,13 @@ Route::middleware('auth')->prefix('api/v1')->group(function () {
 
         // Company Settings - signature upload
         Route::post('/settings/signature', [\App\Http\Controllers\Api\CompanySettingController::class, 'uploadSignature']);
+
+        // Warning Letters (Admin & HR)
+        Route::post('/warning-letters', [\App\Http\Controllers\Api\WarningLetterController::class, 'store']);
+        Route::put('/warning-letters/{id}/revoke', [\App\Http\Controllers\Api\WarningLetterController::class, 'revoke']);
+
+        // Employee Bulk CSV Import
+        Route::post('/employees/import-csv', [\App\Http\Controllers\Api\EmployeeController::class, 'importCsv']);
     });
     
     // Shared API
@@ -268,6 +283,14 @@ Route::middleware('auth')->prefix('api/v1')->group(function () {
     
     Route::get('/payrolls/{id}', [\App\Http\Controllers\Api\PayrollController::class, 'show']);
     Route::get('/payrolls/{id}/slip', [\App\Http\Controllers\Api\PayrollController::class, 'downloadSlip']);
+
+    // Warning Letters & Certificates
+    Route::get('/warning-letters', [\App\Http\Controllers\Api\WarningLetterController::class, 'index']);
+    Route::get('/warning-letters/{id}/download-pdf', [\App\Http\Controllers\Api\WarningLetterController::class, 'downloadPdf']);
+    Route::get('/employees/{id}/paklaring', [\App\Http\Controllers\Api\CertificateController::class, 'downloadPaklaring']);
+    Route::get('/employees/{id}/active-letter', [\App\Http\Controllers\Api\CertificateController::class, 'downloadActiveLetter']);
+    Route::get('/leaves/calendar', [\App\Http\Controllers\Api\LeaveController::class, 'calendar']);
+    Route::get('/employees/template/download', [\App\Http\Controllers\Api\EmployeeController::class, 'downloadTemplate']);
 });
 
 require __DIR__.'/auth.php';

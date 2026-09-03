@@ -6,7 +6,7 @@ import {
     Sun, Moon, Bell, Menu, X, 
     LayoutDashboard, Megaphone, Users, CalendarCheck, 
     WalletCards, Receipt, Settings as SettingsIcon, Calendar, 
-    Coffee, Clock, Banknote, LogOut, User, Activity, FileCheck, Laptop, Star, Network, BarChart3, AlarmClock, Target, Briefcase, UserMinus, CalendarClock
+    Coffee, Clock, Banknote, LogOut, User, Activity, FileCheck, Laptop, Star, Network, BarChart3, AlarmClock, Target, Briefcase, UserMinus, CalendarClock, ShieldAlert, Calculator
 } from 'lucide-react';
 import { useTheme } from '@/Components/ThemeProvider';
 import axios from 'axios';
@@ -130,6 +130,9 @@ export default function AuthenticatedLayout({ header, children }) {
                             <SidebarLink href={route('employees')} active={route().current('employees')} icon={Users}>
                                 Data Karyawan
                             </SidebarLink>
+                            <SidebarLink href={route('warning-letters')} active={route().current('warning-letters')} icon={ShieldAlert}>
+                                Surat Peringatan (SP)
+                            </SidebarLink>
                             <SidebarLink href={route('org-chart')} active={route().current('org-chart')} icon={Network}>
                                 Struktur Organisasi
                             </SidebarLink>
@@ -154,6 +157,9 @@ export default function AuthenticatedLayout({ header, children }) {
                             </SidebarLink>
                             <SidebarLink href={route('salary-components')} active={route().current('salary-components')} icon={Receipt}>
                                 Komponen Gaji
+                            </SidebarLink>
+                            <SidebarLink href={route('salary-simulator')} active={route().current('salary-simulator')} icon={Calculator}>
+                                Simulasi Gaji & Pajak
                             </SidebarLink>
 
                             <SidebarGroup title="Talent Management" />
