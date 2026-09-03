@@ -15,8 +15,43 @@ class EmployeeController extends Controller
 {
     public function index()
     {
-        $employees = Employee::with('user')->get();
-        return response()->json(['success' => true, 'data' => $employees]);
+        $now = \Carbon\Carbon::now();
+        $employees = Employee::with('user')->get()->map(function($emp) use ($now) {
+            $joinDate = $emp->join_date ? \Carbon\Carbon::parse($emp->join_date) : null;
+            $contractEndDate = null;
+            $daysRemaining = null;
+            $isExpiringSoon = false;
+
+            if ($joinDate && in_array($emp->employment_status, ['contract', 'probation'])) {
+                if ($emp->employment_status === 'probation') {
+                    $contractEndDate = $joinDate->copy()->addMonths(3);
+                } else {
+                    $contractEndDate = $joinDate->copy()->addYear();
+                    while ($contractEndDate->isPast() && $contractEndDate->diffInDays($now) > 365) {
+                        $contractEndDate->addYear();
+                    }
+                }
+
+                $daysRemaining = (int) $now->diffInDays($contractEndDate, false);
+                if ($daysRemaining >= 0 && $daysRemaining <= 30) {
+                    $isExpiringSoon = true;
+                }
+            }
+
+            $emp->contract_end_date = $contractEndDate ? $contractEndDate->format('Y-m-d') : null;
+            $emp->days_remaining = $daysRemaining;
+            $emp->is_expiring_soon = $isExpiringSoon;
+
+            return $emp;
+        });
+
+        $expiringCount = $employees->where('is_expiring_soon', true)->count();
+
+        return response()->json([
+            'success' => true,
+            'data' => $employees,
+            'expiring_count' => $expiringCount
+        ]);
     }
 
     public function store(EmployeeRequest $request)

@@ -15,6 +15,8 @@ export default function EmployeeIndex({ auth }) {
     const [uploading, setUploading] = useState(false);
     const [docForm, setDocForm] = useState({ title: '', file: null });
     const [errors, setErrors] = useState({});
+    const [expiringCount, setExpiringCount] = useState(0);
+    const [filterExpiring, setFilterExpiring] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -46,6 +48,7 @@ export default function EmployeeIndex({ auth }) {
         try {
             const response = await axios.get('/api/v1/employees');
             setEmployees(response.data.data);
+            setExpiringCount(response.data.expiring_count || 0);
         } catch (error) {
             console.error("Error fetching employees", error);
         }
@@ -190,9 +193,34 @@ export default function EmployeeIndex({ auth }) {
                     <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6 text-gray-900 dark:text-gray-100">
                             
+                            {/* Contract Expiry Warning Banner */}
+                            {expiringCount > 0 && (
+                                <div className="mb-6 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                                    <div className="flex items-center gap-3 text-amber-800 dark:text-amber-200">
+                                        <span className="text-2xl">⏳</span>
+                                        <div>
+                                            <p className="font-bold text-sm">Peringatan Jatuh Tempo Kontrak (PKWT / Probation)</p>
+                                            <p className="text-xs text-amber-700 dark:text-amber-300">
+                                                Terdapat <strong>{expiringCount} karyawan</strong> yang masa kontrak/probation kerjanya akan berakhir dalam 30 hari ke depan.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => setFilterExpiring(!filterExpiring)}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                                            filterExpiring 
+                                                ? 'bg-amber-600 text-white shadow' 
+                                                : 'bg-amber-100 hover:bg-amber-200 dark:bg-amber-800/60 dark:hover:bg-amber-800 text-amber-900 dark:text-amber-100'
+                                        }`}
+                                    >
+                                        {filterExpiring ? 'Tampilkan Semua Karyawan' : 'Filter Karyawan Akan Habis Kontrak'}
+                                    </button>
+                                </div>
+                            )}
+
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-lg font-bold flex items-center gap-2">
-                                    <Users size={20} /> Data Induk Karyawan
+                                    <Users size={20} /> Data Induk Karyawan {filterExpiring && <span className="text-xs font-normal text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 rounded-full">(Filter Kontrak Berakhir)</span>}
                                 </h3>
                                 <button 
                                     onClick={openAddModal}
@@ -214,12 +242,12 @@ export default function EmployeeIndex({ auth }) {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {employees.length === 0 ? (
+                                        {(filterExpiring ? employees.filter(e => e.is_expiring_soon) : employees).length === 0 ? (
                                             <tr>
                                                 <td colSpan="5" className="p-4 text-center text-gray-500 dark:text-gray-400">Belum ada data karyawan.</td>
                                             </tr>
                                         ) : (
-                                            employees.map(emp => (
+                                            (filterExpiring ? employees.filter(e => e.is_expiring_soon) : employees).map(emp => (
                                                 <tr key={emp.id} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                                     <td className="p-4">
                                                         <div className="font-medium text-gray-800 dark:text-gray-200">{emp.user?.name}</div>
@@ -237,6 +265,13 @@ export default function EmployeeIndex({ auth }) {
                                                                 {emp.employment_status || '-'}
                                                             </span>
                                                         </div>
+                                                        {emp.is_expiring_soon && (
+                                                            <div className="mt-1">
+                                                                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 rounded">
+                                                                    ⚠️ Habis {emp.days_remaining} hari lagi
+                                                                </span>
+                                                            </div>
+                                                        )}
                                                     </td>
                                                     <td className="p-4 text-gray-600 dark:text-gray-300">
                                                         <div>{emp.phone || '-'}</div>

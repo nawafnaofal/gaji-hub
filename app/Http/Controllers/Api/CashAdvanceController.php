@@ -29,13 +29,46 @@ class CashAdvanceController extends Controller
 
     public function store(Request $request)
     {
+        $user = \Illuminate\Support\Facades\Auth::user();
+
         $request->validate([
             'employee_id' => 'required|exists:employees,id',
             'date' => 'required|date',
-            'amount' => 'required|numeric|min:0',
+            'amount' => 'required|numeric|min:10000',
         ]);
 
         $employee = \App\Models\Employee::find($request->employee_id);
+
+        // Security check for role employee
+        if ($user->role === 'employee') {
+            if (!$user->employee || $user->employee->id !== $employee->id) {
+                return response()->json(['success' => false, 'message' => 'Anda hanya dapat mengajukan kasbon untuk diri sendiri.'], 403);
+            }
+        }
+
+        // Plafon check: max 50% of basic salary
+        $maxAllowed = round(($employee->basic_salary ?? 0) * 0.5);
+        if ($employee->basic_salary > 0 && $request->amount > $maxAllowed) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nominal kasbon melebihi batas plafon 50% dari gaji pokok (Maksimal: Rp ' . number_format($maxAllowed, 0, ',', '.') . ').'
+            ], 422);
+        }
+
+        // Check active / unpaid cash advance in the same month
+        $requestDate = \Carbon\Carbon::parse($request->date);
+        $hasActiveCashAdvance = CashAdvance::where('employee_id', $employee->id)
+            ->whereIn('status', ['pending_manager', 'pending_hr', 'approved'])
+            ->whereMonth('date', $requestDate->month)
+            ->whereYear('date', $requestDate->year)
+            ->exists();
+
+        if ($hasActiveCashAdvance) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda masih memiliki pengajuan kasbon yang aktif/belum terpotong payroll untuk periode bulan ini.'
+            ], 422);
+        }
 
         $cashAdvance = CashAdvance::create(array_merge(
             $request->all(),
@@ -45,7 +78,7 @@ class CashAdvanceController extends Controller
         $this->notifyManagerOrHR(
             $employee,
             'Pengajuan Kasbon Baru',
-            "{$employee->user->name} telah mengajukan kasbon.",
+            "{$employee->user->name} telah mengajukan kasbon sebesar Rp " . number_format($request->amount, 0, ',', '.'),
             '/cash-advances'
         );
 

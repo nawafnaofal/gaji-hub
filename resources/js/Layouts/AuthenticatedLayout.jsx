@@ -109,6 +109,9 @@ export default function AuthenticatedLayout({ header, children }) {
                     <SidebarLink href={route('dashboard')} active={route().current('dashboard')} icon={LayoutDashboard}>
                         Dashboard
                     </SidebarLink>
+                    <SidebarLink href={route('my-payslips')} active={route().current('my-payslips')} icon={WalletCards}>
+                        Slip Gaji Saya
+                    </SidebarLink>
                     {isAdminOrHr && (
                         <SidebarLink href={route('announcements')} active={route().current('announcements')} icon={Megaphone}>
                             Pengumuman
@@ -278,13 +281,13 @@ export default function AuthenticatedLayout({ header, children }) {
                                                 className={`px-4 py-3 border-b dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors ${notif.read_at ? 'opacity-70' : 'bg-blue-50/50 dark:bg-blue-900/20'}`}
                                             >
                                                 <p className={`text-sm ${notif.read_at ? 'text-gray-700 dark:text-gray-300' : 'font-semibold text-gray-900 dark:text-white'}`}>
-                                                    {notif.data.title}
+                                                    {notif.data?.title || notif.title}
                                                 </p>
                                                 <p className="mt-1 text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
-                                                    {notif.data.message}
+                                                    {notif.data?.message || notif.message}
                                                 </p>
                                                 <p className="mt-2 text-[10px] font-medium text-gray-400 dark:text-gray-500">
-                                                    {new Date(notif.created_at).toLocaleString('id-ID')}
+                                                    {notif.created_at ? (typeof notif.created_at === 'string' && notif.created_at.includes(' ') && !notif.created_at.includes('-') ? notif.created_at : new Date(notif.created_at).toLocaleString('id-ID')) : ''}
                                                 </p>
                                             </div>
                                         ))

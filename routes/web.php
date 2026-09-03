@@ -32,6 +32,10 @@ Route::get('/payroll/{id}', function ($id) {
     return Inertia::render('Payroll/Show', ['payroll_id' => $id]);
 })->middleware(['auth', 'verified'])->name('payroll.show');
 
+Route::get('/my-payslips', function () {
+    return Inertia::render('Payroll/MyPayslip');
+})->middleware(['auth', 'verified'])->name('my-payslips');
+
 Route::get('/employees', function () {
     return Inertia::render('Employee/Index');
 })->middleware(['auth', 'verified', 'role:admin,hr'])->name('employees');

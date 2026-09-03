@@ -56,8 +56,12 @@ export default function CashAdvanceIndex({ auth }) {
             setShowModal(false);
             setFormData({ employee_id: '', date: '', amount: '', reason: '' });
             fetchCashAdvances();
+            alert('Pengajuan kasbon berhasil dikirim!');
         } catch (error) {
-            if (error.response?.status === 422) {
+            if (error.response?.data?.message) {
+                alert(error.response.data.message);
+            }
+            if (error.response?.status === 422 && error.response.data.errors) {
                 setErrors(error.response.data.errors);
             }
         }
@@ -211,8 +215,11 @@ export default function CashAdvanceIndex({ auth }) {
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nominal (Rp)</label>
-                                <input type="number" name="amount" value={formData.amount} onChange={handleInputChange} className="w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-md text-sm" />
+                                <input type="number" name="amount" value={formData.amount} onChange={handleInputChange} className="w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-md text-sm" placeholder="Contoh: 1000000" />
                                 {errors.amount && <p className="text-red-500 text-xs mt-1">{errors.amount[0]}</p>}
+                                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1.5">
+                                    💡 <strong>Kebijakan Perusahaan:</strong> Maksimal kasbon adalah 50% dari gaji pokok dan hanya diizinkan 1 kasbon aktif per periode.
+                                </p>
                             </div>
 
                             <div>

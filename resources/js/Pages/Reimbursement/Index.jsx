@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
-import { DollarSign, CheckCircle, XCircle, FileText } from 'lucide-react';
+import { DollarSign, CheckCircle, XCircle, FileText, Eye } from 'lucide-react';
 
 export default function ReimbursementIndex({ auth }) {
     const [claims, setClaims] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [previewUrl, setPreviewUrl] = useState(null);
 
     const [form, setForm] = useState({
         date: '',
@@ -156,9 +157,13 @@ export default function ReimbursementIndex({ auth }) {
                                                 <td className="p-4 font-medium dark:text-gray-200">{formatRupiah(claim.amount)}</td>
                                                 <td className="p-4">
                                                     {claim.attachment_url ? (
-                                                        <a href={claim.attachment_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm flex items-center gap-1">
-                                                            <FileText size={14} /> Lihat
-                                                        </a>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setPreviewUrl(claim.attachment_url)} 
+                                                            className="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-xs font-semibold flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 px-2.5 py-1 rounded transition"
+                                                        >
+                                                            <Eye size={14} /> Preview
+                                                        </button>
                                                     ) : (
                                                         <span className="text-gray-400 text-sm">-</span>
                                                     )}
@@ -191,6 +196,36 @@ export default function ReimbursementIndex({ auth }) {
                     </div>
                 </div>
             </div>
+
+            {/* Modal Quick Preview Bukti Lampiran */}
+            {previewUrl && (
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setPreviewUrl(null)}>
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl w-full p-5 overflow-hidden shadow-2xl relative" onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-between items-center pb-3 border-b dark:border-gray-700">
+                            <h4 className="font-bold text-gray-900 dark:text-white text-base flex items-center gap-2">
+                                <FileText size={18} className="text-blue-600 dark:text-blue-400" />
+                                Bukti Struk / Nota Pembayaran
+                            </h4>
+                            <button onClick={() => setPreviewUrl(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl font-bold">&times;</button>
+                        </div>
+                        <div className="my-4 max-h-[65vh] flex items-center justify-center overflow-auto rounded-xl bg-gray-100 dark:bg-gray-900 p-2">
+                            {previewUrl.match(/\.(jpeg|jpg|png|gif|webp)$/i) || previewUrl.startsWith('data:image') || !previewUrl.endsWith('.pdf') ? (
+                                <img src={previewUrl} alt="Bukti Struk" className="max-h-[60vh] object-contain rounded-lg shadow-sm" />
+                            ) : (
+                                <iframe src={previewUrl} className="w-full h-[60vh] rounded border-0" title="Dokumen PDF" />
+                            )}
+                        </div>
+                        <div className="flex justify-between items-center pt-2">
+                            <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline">
+                                Buka di Tab Baru &rarr;
+                            </a>
+                            <button onClick={() => setPreviewUrl(null)} className="px-4 py-1.5 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 text-xs font-semibold rounded-lg transition">
+                                Tutup
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </AuthenticatedLayout>
     );
 }

@@ -316,7 +316,13 @@ class PayrollController extends Controller
         $year = $request->query('year');
 
         // 2. Query Builder dengan Eager Loading
+        $user = Auth::user();
         $query = Payroll::with(['employee.user'])
+            ->when($user->role === 'employee', function ($q) use ($user) {
+                $employeeId = $user->employee ? $user->employee->id : 0;
+                $q->where('employee_id', $employeeId)
+                  ->whereIn('status', ['approved', 'paid']);
+            })
             ->when($search, function ($q) use ($search) {
                 $q->whereHas('employee', function ($employeeQuery) use ($search) {
                     $employeeQuery->where('employee_code', 'like', "%{$search}%")
@@ -327,7 +333,8 @@ class PayrollController extends Controller
             })
             ->when($month, fn($q) => $q->where('period_month', $month))
             ->when($year, fn($q) => $q->where('period_year', $year))
-            ->orderBy('created_at', 'desc');
+            ->orderBy('period_year', 'desc')
+            ->orderBy('period_month', 'desc');
 
         // 3. Server-side Pagination (misal 15 data per halaman)
         $payrolls = $query->paginate(15);
