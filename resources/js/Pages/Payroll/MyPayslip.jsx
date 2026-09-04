@@ -9,13 +9,18 @@ export default function MyPayslip({ auth }) {
     const [payrolls, setPayrolls] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedPayroll, setSelectedPayroll] = useState(null);
-    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+    const [search, setSearch] = useState('');
+    const isAdminOrHr = ['admin', 'hr'].includes(auth?.user?.role);
+    const hasEmployeeRecord = !!auth?.user?.employee;
 
     const fetchMyPayrolls = async () => {
         setLoading(true);
         try {
             const res = await axios.get('/api/v1/payrolls', {
-                params: { year: selectedYear }
+                params: { 
+                    year: selectedYear,
+                    search: search 
+                }
             });
             setPayrolls(res.data.data.data || res.data.data || []);
         } catch (error) {
@@ -26,8 +31,11 @@ export default function MyPayslip({ auth }) {
     };
 
     useEffect(() => {
-        fetchMyPayrolls();
-    }, [selectedYear]);
+        const timeoutId = setTimeout(() => {
+            fetchMyPayrolls();
+        }, 300);
+        return () => clearTimeout(timeoutId);
+    }, [selectedYear, search]);
 
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(amount || 0);
@@ -43,21 +51,29 @@ export default function MyPayslip({ auth }) {
     return (
         <AuthenticatedLayout
             user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Slip Gaji Saya</h2>}
+            header={<h2 className="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+                {isAdminOrHr && !hasEmployeeRecord ? 'Daftar Slip Gaji Karyawan' : 'Slip Gaji Saya'}
+            </h2>}
         >
-            <Head title="Slip Gaji Saya" />
+            <Head title={isAdminOrHr && !hasEmployeeRecord ? "Daftar Slip Gaji Karyawan" : "Slip Gaji Saya"} />
 
             <div className="py-8">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
                     
-                    {/* Header Banner & Year Filter */}
+                    {/* Header Banner & Filter */}
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-blue-600 to-indigo-700 p-6 rounded-2xl text-white shadow-lg">
                         <div>
                             <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold mb-2">
                                 <Wallet size={14} /> Dokumen Resmi Penggajian
                             </div>
-                            <h1 className="text-2xl md:text-3xl font-bold">Riwayat Slip Gaji & Penghasilan</h1>
-                            <p className="text-blue-100 text-sm mt-1">Transparan, aman, dan dapat diunduh kapan saja dalam format PDF resmi.</p>
+                            <h1 className="text-2xl md:text-3xl font-bold">
+                                {isAdminOrHr && !hasEmployeeRecord ? 'Riwayat Slip Gaji Karyawan' : 'Riwayat Slip Gaji & Penghasilan'}
+                            </h1>
+                            <p className="text-blue-100 text-sm mt-1">
+                                {isAdminOrHr && !hasEmployeeRecord 
+                                    ? 'Kelola, pratinjau, dan unduh dokumen slip gaji seluruh karyawan perusahaan.' 
+                                    : 'Transparan, aman, dan dapat diunduh kapan saja dalam format PDF resmi.'}
+                            </p>
                         </div>
                         <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md p-2 rounded-xl border border-white/20">
                             <Calendar size={18} className="text-blue-200" />
@@ -74,8 +90,8 @@ export default function MyPayslip({ auth }) {
                         </div>
                     </div>
 
-                    {/* Quick KPI Cards (Latest Month) */}
-                    {latestPayroll && (
+                    {/* Quick KPI Cards (Latest Month) - Show only for individual employee */}
+                    {latestPayroll && (!isAdminOrHr || hasEmployeeRecord) && (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
                                 <div className="flex justify-between items-start">
@@ -132,17 +148,39 @@ export default function MyPayslip({ auth }) {
 
                     {/* Table List of Payslips */}
                     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                        <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                <FileText size={20} className="text-blue-600 dark:text-blue-400" />
-                                Daftar Slip Gaji ({selectedYear})
-                            </h3>
+                        <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                    <FileText size={20} className="text-blue-600 dark:text-blue-400" />
+                                    {isAdminOrHr && !hasEmployeeRecord ? 'Daftar Slip Gaji Seluruh Karyawan' : 'Daftar Slip Gaji'} ({selectedYear})
+                                </h3>
+                                {isAdminOrHr && !hasEmployeeRecord && (
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                        Nama karyawan dan departemen pemilik slip gaji tercantum jelas pada setiap baris.
+                                    </p>
+                                )}
+                            </div>
+                            
+                            {isAdminOrHr && (
+                                <div className="w-full md:w-72">
+                                    <input 
+                                        type="text" 
+                                        placeholder="Cari nama atau NIK karyawan..." 
+                                        className="w-full px-3.5 py-2 text-xs border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
+                                    />
+                                </div>
+                            )}
                         </div>
 
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
                                     <tr className="bg-gray-50 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider border-b dark:border-gray-700">
+                                        {(isAdminOrHr && !hasEmployeeRecord) && (
+                                            <th className="p-4 font-semibold">Nama Karyawan</th>
+                                        )}
                                         <th className="p-4 font-semibold">Periode Bulan</th>
                                         <th className="p-4 font-semibold">Gaji Pokok</th>
                                         <th className="p-4 font-semibold">Tunjangan</th>
@@ -155,19 +193,29 @@ export default function MyPayslip({ auth }) {
                                 <tbody className="divide-y divide-gray-100 dark:divide-gray-700 text-sm">
                                     {loading ? (
                                         <tr>
-                                            <td colSpan="7" className="p-8 text-center text-gray-500 dark:text-gray-400">
+                                            <td colSpan={(isAdminOrHr && !hasEmployeeRecord) ? "8" : "7"} className="p-8 text-center text-gray-500 dark:text-gray-400">
                                                 Memuat data slip gaji...
                                             </td>
                                         </tr>
                                     ) : payrolls.length === 0 ? (
                                         <tr>
-                                            <td colSpan="7" className="p-8 text-center text-gray-500 dark:text-gray-400">
+                                            <td colSpan={(isAdminOrHr && !hasEmployeeRecord) ? "8" : "7"} className="p-8 text-center text-gray-500 dark:text-gray-400">
                                                 Belum ada slip gaji yang dirilis untuk tahun {selectedYear}.
                                             </td>
                                         </tr>
                                     ) : (
                                         payrolls.map((p) => (
                                             <tr key={p.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition">
+                                                {(isAdminOrHr && !hasEmployeeRecord) && (
+                                                    <td className="p-4">
+                                                        <div className="font-semibold text-gray-900 dark:text-white">
+                                                            {p.employee?.user?.name || 'Karyawan'}
+                                                        </div>
+                                                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                                                            {p.employee?.employee_code} • {p.employee?.department || p.employee?.department_id || p.employee?.job_title || '-'}
+                                                        </div>
+                                                    </td>
+                                                )}
                                                 <td className="p-4 font-medium text-gray-900 dark:text-white">
                                                     {getMonthName(p.period_month)} {p.period_year}
                                                 </td>
@@ -202,7 +250,7 @@ export default function MyPayslip({ auth }) {
                                                             <Eye size={14} /> Detail
                                                         </button>
                                                         <a
-                                                            href={`/api/v1/payrolls/${p.id}/download-slip`}
+                                                            href={`/api/v1/payrolls/${p.id}/slip`}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                             className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium flex items-center gap-1 transition shadow-sm"

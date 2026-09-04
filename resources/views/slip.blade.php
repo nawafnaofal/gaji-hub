@@ -76,7 +76,7 @@
                 <td>Nama</td>
                 <td>: {{ $payroll->employee->user->name }}</td>
                 <td>Departemen</td>
-                <td>: {{ $payroll->employee->department_id }}</td>
+                <td>: {{ $payroll->employee->department ?? $payroll->employee->department_id ?? '-' }}</td>
             </tr>
         </table>
 

@@ -110,7 +110,7 @@ export default function AuthenticatedLayout({ header, children }) {
                         Dashboard
                     </SidebarLink>
                     <SidebarLink href={route('my-payslips')} active={route().current('my-payslips')} icon={WalletCards}>
-                        Slip Gaji Saya
+                        {user.role === 'employee' || user.employee ? 'Slip Gaji Saya' : 'Lihat Slip Gaji Karyawan'}
                     </SidebarLink>
                     {isAdminOrHr && (
                         <SidebarLink href={route('announcements')} active={route().current('announcements')} icon={Megaphone}>
