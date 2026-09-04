@@ -240,46 +240,163 @@ export default function MyPayslip({ auth }) {
                         </div>
 
                         {/* Breakdown Component */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-4">
-                            {/* Pendapatan */}
-                            <div className="bg-gray-50 dark:bg-gray-800/80 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
-                                <h4 className="font-bold text-green-700 dark:text-green-400 mb-3 text-sm uppercase tracking-wide">
-                                    Penghasilan (Earnings)
-                                </h4>
-                                <div className="space-y-2 text-sm">
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600 dark:text-gray-400">Gaji Pokok</span>
-                                        <span className="font-semibold">{formatCurrency(selectedPayroll.total_basic)}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600 dark:text-gray-400">Tunjangan & Lembur</span>
-                                        <span className="font-semibold">{formatCurrency(selectedPayroll.total_allowance)}</span>
-                                    </div>
-                                    <div className="border-t dark:border-gray-700 pt-2 flex justify-between font-bold text-green-600 dark:text-green-400">
-                                        <span>Total Bruto</span>
-                                        <span>{formatCurrency(Number(selectedPayroll.total_basic) + Number(selectedPayroll.total_allowance))}</span>
-                                    </div>
-                                </div>
-                            </div>
+                        {(() => {
+                            const details = typeof selectedPayroll.details === 'string' 
+                                ? JSON.parse(selectedPayroll.details || '{}') 
+                                : (selectedPayroll.details || {});
+                            const allowances = details.allowances || {};
+                            const deductions = details.deductions || {};
+                            const benefits = details.benefits || {};
+                            const attendance = details.attendance_summary || {};
 
-                            {/* Potongan */}
-                            <div className="bg-gray-50 dark:bg-gray-800/80 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
-                                <h4 className="font-bold text-red-700 dark:text-red-400 mb-3 text-sm uppercase tracking-wide">
-                                    Potongan (Deductions)
-                                </h4>
-                                <div className="space-y-2 text-sm">
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600 dark:text-gray-400">Total Potongan Resmi</span>
-                                        <span className="font-semibold text-red-600 dark:text-red-400">
-                                            {formatCurrency(selectedPayroll.total_deduction)}
-                                        </span>
+                            return (
+                                <div className="space-y-4 my-4">
+                                    {/* Attendance Mini Bar */}
+                                    {attendance && (
+                                        <div className="bg-gray-50 dark:bg-gray-800/60 p-3 rounded-xl border border-gray-100 dark:border-gray-700 flex flex-wrap gap-4 text-xs text-gray-600 dark:text-gray-300">
+                                            <span>📅 Kehadiran: <strong className="text-gray-900 dark:text-white">{attendance.present_days ?? '-'} hari</strong></span>
+                                            {Number(attendance.late_days || 0) > 0 && <span>⚠️ Terlambat: <strong className="text-amber-600">{attendance.late_days} hari</strong></span>}
+                                            {Number(attendance.absent_days || 0) > 0 && <span>❌ Alpa: <strong className="text-red-600">{attendance.absent_days} hari</strong></span>}
+                                            {Number(attendance.overtime_hours || 0) > 0 && <span>⏰ Lembur: <strong className="text-blue-600">{attendance.overtime_hours} jam</strong></span>}
+                                        </div>
+                                    )}
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {/* Pendapatan (Earnings) */}
+                                        <div className="bg-gray-50 dark:bg-gray-800/80 p-4 rounded-xl border border-gray-100 dark:border-gray-700 flex flex-col justify-between">
+                                            <div>
+                                                <h4 className="font-bold text-green-700 dark:text-green-400 mb-3 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                                                    <span className="w-2 h-2 rounded-full bg-green-500"></span> Penghasilan (Earnings)
+                                                </h4>
+                                                <div className="space-y-2 text-sm">
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600 dark:text-gray-400">Gaji Pokok</span>
+                                                        <span className="font-medium text-gray-900 dark:text-gray-100">{formatCurrency(selectedPayroll.total_basic)}</span>
+                                                    </div>
+                                                    {Number(allowances.transport || 0) > 0 && (
+                                                        <div className="flex justify-between">
+                                                            <span className="text-gray-600 dark:text-gray-400">Tunjangan Transport</span>
+                                                            <span className="font-medium text-gray-900 dark:text-gray-100">{formatCurrency(allowances.transport)}</span>
+                                                        </div>
+                                                    )}
+                                                    {Number(allowances.meal || 0) > 0 && (
+                                                        <div className="flex justify-between">
+                                                            <span className="text-gray-600 dark:text-gray-400">Tunjangan Makan</span>
+                                                            <span className="font-medium text-gray-900 dark:text-gray-100">{formatCurrency(allowances.meal)}</span>
+                                                        </div>
+                                                    )}
+                                                    {Number(allowances.overtime || 0) > 0 && (
+                                                        <div className="flex justify-between">
+                                                            <span className="text-gray-600 dark:text-gray-400">Upah Lembur (Overtime)</span>
+                                                            <span className="font-medium text-gray-900 dark:text-gray-100">{formatCurrency(allowances.overtime)}</span>
+                                                        </div>
+                                                    )}
+                                                    {Number(allowances.reimbursement || 0) > 0 && (
+                                                        <div className="flex justify-between">
+                                                            <span className="text-gray-600 dark:text-gray-400">Klaim (Reimbursement)</span>
+                                                            <span className="font-medium text-gray-900 dark:text-gray-100">{formatCurrency(allowances.reimbursement)}</span>
+                                                        </div>
+                                                    )}
+                                                    {Object.entries(allowances).map(([k, val]) => {
+                                                        if (['transport', 'meal', 'overtime', 'reimbursement'].includes(k) || !val) return null;
+                                                        return (
+                                                            <div key={k} className="flex justify-between">
+                                                                <span className="text-gray-600 dark:text-gray-400 capitalize">{k.replace(/_/g, ' ')}</span>
+                                                                <span className="font-medium text-gray-900 dark:text-gray-100">{formatCurrency(val)}</span>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                            <div className="border-t dark:border-gray-700 pt-3 mt-4 flex justify-between font-bold text-green-600 dark:text-green-400">
+                                                <span>Total Penghasilan Bruto</span>
+                                                <span>{formatCurrency(Number(selectedPayroll.total_basic) + Number(selectedPayroll.total_allowance))}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Potongan (Deductions) */}
+                                        <div className="bg-gray-50 dark:bg-gray-800/80 p-4 rounded-xl border border-gray-100 dark:border-gray-700 flex flex-col justify-between">
+                                            <div>
+                                                <h4 className="font-bold text-red-700 dark:text-red-400 mb-3 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                                                    <span className="w-2 h-2 rounded-full bg-red-500"></span> Potongan (Deductions)
+                                                </h4>
+                                                <div className="space-y-2 text-sm">
+                                                    {Number(deductions.bpjs_kesehatan || 0) > 0 && (
+                                                        <div className="flex justify-between">
+                                                            <span className="text-gray-600 dark:text-gray-400">BPJS Kesehatan (1%)</span>
+                                                            <span className="font-medium text-red-600 dark:text-red-400">-{formatCurrency(deductions.bpjs_kesehatan)}</span>
+                                                        </div>
+                                                    )}
+                                                    {Number(deductions.bpjs_tk_jht || 0) > 0 && (
+                                                        <div className="flex justify-between">
+                                                            <span className="text-gray-600 dark:text-gray-400">BPJS Ketenagakerjaan JHT (2%)</span>
+                                                            <span className="font-medium text-red-600 dark:text-red-400">-{formatCurrency(deductions.bpjs_tk_jht)}</span>
+                                                        </div>
+                                                    )}
+                                                    {Number(deductions.bpjs_tk_jp || 0) > 0 && (
+                                                        <div className="flex justify-between">
+                                                            <span className="text-gray-600 dark:text-gray-400">BPJS Ketenagakerjaan JP (1%)</span>
+                                                            <span className="font-medium text-red-600 dark:text-red-400">-{formatCurrency(deductions.bpjs_tk_jp)}</span>
+                                                        </div>
+                                                    )}
+                                                    {Number(deductions.pph21 || 0) > 0 && (
+                                                        <div className="flex justify-between">
+                                                            <span className="text-gray-600 dark:text-gray-400">Pajak PPh 21 (TER)</span>
+                                                            <span className="font-medium text-red-600 dark:text-red-400">-{formatCurrency(deductions.pph21)}</span>
+                                                        </div>
+                                                    )}
+                                                    {Number(deductions.cash_advance || 0) > 0 && (
+                                                        <div className="flex justify-between">
+                                                            <span className="text-gray-600 dark:text-gray-400">Potongan Kasbon</span>
+                                                            <span className="font-medium text-red-600 dark:text-red-400">-{formatCurrency(deductions.cash_advance)}</span>
+                                                        </div>
+                                                    )}
+                                                    {Number(deductions.loan_installment || 0) > 0 && (
+                                                        <div className="flex justify-between">
+                                                            <span className="text-gray-600 dark:text-gray-400">Cicilan Pinjaman</span>
+                                                            <span className="font-medium text-red-600 dark:text-red-400">-{formatCurrency(deductions.loan_installment)}</span>
+                                                        </div>
+                                                    )}
+                                                    {Number(deductions.late_penalty || 0) > 0 && (
+                                                        <div className="flex justify-between">
+                                                            <span className="text-gray-600 dark:text-gray-400">Denda Keterlambatan</span>
+                                                            <span className="font-medium text-red-600 dark:text-red-400">-{formatCurrency(deductions.late_penalty)}</span>
+                                                        </div>
+                                                    )}
+                                                    {Number(deductions.absence_penalty || 0) > 0 && (
+                                                        <div className="flex justify-between">
+                                                            <span className="text-gray-600 dark:text-gray-400">Potongan Alpa</span>
+                                                            <span className="font-medium text-red-600 dark:text-red-400">-{formatCurrency(deductions.absence_penalty)}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="border-t dark:border-gray-700 pt-3 mt-4 flex justify-between font-bold text-red-600 dark:text-red-400">
+                                                <span>Total Potongan</span>
+                                                <span>-{formatCurrency(selectedPayroll.total_deduction)}</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 italic">
-                                        *Termasuk BPJS Karyawan, PPh 21 TER, Kasbon, dan Keterlambatan/Absen.
-                                    </p>
+
+                                    {/* Benefit yang ditanggung perusahaan (Optional Info) */}
+                                    {benefits && Object.keys(benefits).length > 0 && (
+                                        <div className="bg-blue-50/50 dark:bg-blue-950/20 p-3.5 rounded-xl border border-blue-100 dark:border-blue-900/40 text-xs">
+                                            <div className="font-semibold text-blue-900 dark:text-blue-300 mb-1.5 flex justify-between">
+                                                <span>🛡️ Manfaat Ditanggung Perusahaan (Company Paid Benefits)</span>
+                                                <span className="font-bold">{formatCurrency(Object.values(benefits).reduce((a, b) => Number(a) + Number(b), 0))}</span>
+                                            </div>
+                                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-gray-600 dark:text-gray-400">
+                                                {Number(benefits.bpjs_kesehatan || 0) > 0 && <span>BPJS Kesehatan (4%): {formatCurrency(benefits.bpjs_kesehatan)}</span>}
+                                                {Number(benefits.bpjs_tk_jht || 0) > 0 && <span>JHT (3.7%): {formatCurrency(benefits.bpjs_tk_jht)}</span>}
+                                                {Number(benefits.bpjs_tk_jkk || 0) > 0 && <span>JKK (0.24%): {formatCurrency(benefits.bpjs_tk_jkk)}</span>}
+                                                {Number(benefits.bpjs_tk_jkm || 0) > 0 && <span>JKM (0.3%): {formatCurrency(benefits.bpjs_tk_jkm)}</span>}
+                                                {Number(benefits.bpjs_tk_jp || 0) > 0 && <span>JP (2%): {formatCurrency(benefits.bpjs_tk_jp)}</span>}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
-                            </div>
-                        </div>
+                            );
+                        })()}
 
                         {/* Take Home Pay Banner */}
                         <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-xl border border-blue-200 dark:border-blue-800 flex justify-between items-center my-4">
@@ -290,7 +407,7 @@ export default function MyPayslip({ auth }) {
                                 </p>
                             </div>
                             <a
-                                href={`/api/v1/payrolls/${selectedPayroll.id}/download-slip`}
+                                href={`/api/v1/payrolls/${selectedPayroll.id}/slip`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold flex items-center gap-2 shadow transition"
