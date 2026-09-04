@@ -9,6 +9,7 @@ export default function MyPayslip({ auth }) {
     const [payrolls, setPayrolls] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedPayroll, setSelectedPayroll] = useState(null);
+    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     const [search, setSearch] = useState('');
     const isAdminOrHr = ['admin', 'hr'].includes(auth?.user?.role);
     const hasEmployeeRecord = !!auth?.user?.employee;
