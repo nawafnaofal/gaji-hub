@@ -15,16 +15,16 @@
         .info-table td { padding: 3px 5px; vertical-align: top; }
         
         .main-table { width: 100%; border-collapse: collapse; }
-        .main-table td { border-right: 2px solid #000; vertical-align: top; padding: 0; }
-        .main-table td:last-child { border-right: none; }
+        .main-col { border-right: 2px solid #000; vertical-align: top; padding: 0; }
+        .main-col:last-child { border-right: none; }
         
         .section { padding: 5px; }
         .section-title { font-weight: bold; text-decoration: underline; margin-bottom: 5px; }
         
         .detail-table { width: 100%; border-collapse: collapse; }
-        .detail-table td { padding: 2px 0; }
+        .detail-table td { padding: 2px 0; border: none !important; }
         .col-label { width: 50%; }
-        .col-colon { width: 2%; text-align: center; }
+        .col-colon { width: 15px; text-align: center; }
         .col-value { width: 48%; text-align: right; }
         
         .total-row-container { width: 100%; border-top: 2px solid #000; border-bottom: 2px solid #000; border-collapse: collapse; }
@@ -82,7 +82,7 @@
 
         <table class="main-table" cellspacing="0" cellpadding="0">
             <tr>
-                <td width="50%">
+                <td class="main-col" width="50%">
                     <div class="section">
                         <div class="section-title">Pendapatan :</div>
                         <table class="detail-table">
@@ -159,7 +159,7 @@
                         </table>
                     </div>
                 </td>
-                <td width="50%">
+                <td class="main-col" width="50%">
                     <div class="section">
                         <div class="section-title">Potongan :</div>
                         <table class="detail-table">
@@ -212,37 +212,37 @@
                             <tr>
                                 <td class="col-label">Periode {{ \Carbon\Carbon::createFromFormat('m', $payroll->period_month)->translatedFormat('F') }}</td>
                                 <td class="col-colon">:</td>
-                                <td style="text-align: left;">{{ $attendance['total_days'] ?? '-' }} Hari</td>
+                                <td class="col-value" style="text-align: left; padding-left: 5px;">{{ $attendance['total_days'] ?? '-' }} Hari</td>
                             </tr>
                             <tr>
                                 <td class="col-label">Jumlah kehadiran</td>
                                 <td class="col-colon">:</td>
-                                <td style="text-align: left;">{{ $attendance['present'] ?? '-' }} Hari</td>
+                                <td class="col-value" style="text-align: left; padding-left: 5px;">{{ $attendance['present'] ?? '-' }} Hari</td>
                             </tr>
                             <tr>
                                 <td class="col-label">Tanpa keterangan</td>
                                 <td class="col-colon">:</td>
-                                <td style="text-align: left;">{{ ($attendance['absent'] ?? 0) > 0 ? $attendance['absent'] : '-' }} Hari</td>
+                                <td class="col-value" style="text-align: left; padding-left: 5px;">{{ ($attendance['absent'] ?? 0) > 0 ? $attendance['absent'] : '-' }} Hari</td>
                             </tr>
                             <tr>
                                 <td class="col-label">Izin</td>
                                 <td class="col-colon">:</td>
-                                <td style="text-align: left;">{{ ($attendance['permit'] ?? 0) > 0 ? $attendance['permit'] : '-' }} Hari</td>
+                                <td class="col-value" style="text-align: left; padding-left: 5px;">{{ ($attendance['permit'] ?? 0) > 0 ? $attendance['permit'] : '-' }} Hari</td>
                             </tr>
                             <tr>
                                 <td class="col-label">Pulang lebih awal</td>
                                 <td class="col-colon">:</td>
-                                <td style="text-align: left;">- Hari</td>
+                                <td class="col-value" style="text-align: left; padding-left: 5px;">- Hari</td>
                             </tr>
                             <tr>
                                 <td class="col-label">Cuti</td>
                                 <td class="col-colon">:</td>
-                                <td style="text-align: left;">{{ ($attendance['leave'] ?? 0) > 0 ? $attendance['leave'] : '-' }} Hari</td>
+                                <td class="col-value" style="text-align: left; padding-left: 5px;">{{ ($attendance['leave'] ?? 0) > 0 ? $attendance['leave'] : '-' }} Hari</td>
                             </tr>
                             <tr>
                                 <td class="col-label">Sakit</td>
                                 <td class="col-colon">:</td>
-                                <td style="text-align: left;">{{ ($attendance['sick'] ?? 0) > 0 ? $attendance['sick'] : '-' }} Hari</td>
+                                <td class="col-value" style="text-align: left; padding-left: 5px;">{{ ($attendance['sick'] ?? 0) > 0 ? $attendance['sick'] : '-' }} Hari</td>
                             </tr>
                         </table>
                     </div>
