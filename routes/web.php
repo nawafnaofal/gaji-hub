@@ -167,7 +167,6 @@ Route::middleware('auth')->prefix('api/v1')->group(function () {
         Route::post('/employees/{employeeId}/documents', [\App\Http\Controllers\Api\EmployeeDocumentController::class, 'store']);
         Route::delete('/documents/{id}', [\App\Http\Controllers\Api\EmployeeDocumentController::class, 'destroy']);
         
-        Route::get('/payrolls', [\App\Http\Controllers\Api\PayrollController::class, 'index']);
         Route::get('/payrolls/export', [\App\Http\Controllers\Api\PayrollController::class, 'exportCsv']);
         Route::get('/payrolls/export/bank', [\App\Http\Controllers\Api\PayrollController::class, 'exportBankTransfer']);
         Route::post('/payrolls/generate', [\App\Http\Controllers\Api\PayrollController::class, 'generate']);
@@ -261,6 +260,9 @@ Route::middleware('auth')->prefix('api/v1')->group(function () {
         // Loans (all roles)
         Route::get('/loans', [\App\Http\Controllers\LoanController::class, 'index']);
         Route::post('/loans', [\App\Http\Controllers\LoanController::class, 'store']);
+
+        // Payrolls (Employee self-payslip & Admin overview - controller handles role filtering)
+        Route::get('/payrolls', [\App\Http\Controllers\Api\PayrollController::class, 'index']);
 
         // Performance reviews (all roles - index only)
         Route::get('/performance-reviews', [\App\Http\Controllers\PerformanceReviewController::class, 'index']);
