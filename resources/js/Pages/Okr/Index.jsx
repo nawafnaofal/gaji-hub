@@ -6,6 +6,7 @@ import { Target, TrendingUp, Plus, CheckCircle, Flag } from 'lucide-react';
 
 export default function OkrManagement({ auth }) {
     const [objectives, setObjectives] = useState([]);
+    const [employees, setEmployees] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showObjModal, setShowObjModal] = useState(false);
     const [showKrModal, setShowKrModal] = useState(false);
@@ -13,13 +14,35 @@ export default function OkrManagement({ auth }) {
     const [selectedObjId, setSelectedObjId] = useState(null);
     const [selectedKr, setSelectedKr] = useState(null);
 
-    const [newObj, setNewObj] = useState({ title: '', start_date: '', end_date: '', employee_id: auth.user.employee?.id || '' });
+    const isAdminOrHr = ['admin', 'hr'].includes(auth.user.role);
+
+    const [newObj, setNewObj] = useState({ 
+        title: '', 
+        start_date: new Date().toISOString().split('T')[0], 
+        end_date: new Date(new Date().setMonth(new Date().getMonth() + 3)).toISOString().split('T')[0], 
+        employee_id: auth.user.employee?.id || '' 
+    });
     const [newKr, setNewKr] = useState({ title: '', target_value: '', unit: '%' });
     const [progressVal, setProgressVal] = useState({ current_value: '', notes: '' });
 
     useEffect(() => {
         fetchData();
+        if (isAdminOrHr) {
+            fetchEmployees();
+        }
     }, []);
+
+    const fetchEmployees = async () => {
+        try {
+            const res = await axios.get('/api/v1/employees');
+            setEmployees(res.data.data);
+            if (!newObj.employee_id && res.data.data.length > 0) {
+                setNewObj(prev => ({ ...prev, employee_id: res.data.data[0].id }));
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
 
     const fetchData = async () => {
         try {
@@ -37,10 +60,17 @@ export default function OkrManagement({ auth }) {
         try {
             await axios.post('/api/v1/okr', newObj);
             setShowObjModal(false);
-            setNewObj({ ...newObj, title: '', start_date: '', end_date: '' });
+            setNewObj({ 
+                title: '', 
+                start_date: new Date().toISOString().split('T')[0], 
+                end_date: new Date(new Date().setMonth(new Date().getMonth() + 3)).toISOString().split('T')[0], 
+                employee_id: auth.user.employee?.id || (employees[0]?.id || '') 
+            });
             fetchData();
+            alert('Objective berhasil dibuat!');
         } catch (e) {
-            alert('Gagal membuat Objective');
+            console.error(e);
+            alert(e.response?.data?.message || 'Gagal membuat Objective');
         }
     };
 
@@ -112,7 +142,7 @@ export default function OkrManagement({ auth }) {
                                             </h4>
                                             <div className="flex items-center gap-4 text-sm text-gray-500">
                                                 <span>Periode: {obj.start_date} - {obj.end_date}</span>
-                                                {obj.employee && <span>• Karyawan: {obj.employee.name}</span>}
+                                                {obj.employee && <span>• Penanggung Jawab: <strong className="text-gray-700 dark:text-gray-300">{obj.employee.user?.name || obj.employee.name}</strong></span>}
                                             </div>
                                         </div>
                                         <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${getStatusColor(obj.status)}`}>
@@ -177,8 +207,8 @@ export default function OkrManagement({ auth }) {
                         <h3 className="text-lg font-bold mb-4">Buat Objective</h3>
                         <form onSubmit={handleCreateObj} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium mb-1">Title</label>
-                                <input required type="text" value={newObj.title} onChange={e => setNewObj({...newObj, title: e.target.value})} className="w-full rounded border-gray-300 dark:border-gray-700 dark:bg-gray-900" />
+                                <label className="block text-sm font-medium mb-1">Judul Target (Objective)</label>
+                                <input required type="text" placeholder="Contoh: Meningkatkan Penjualan Kuartal 1" value={newObj.title} onChange={e => setNewObj({...newObj, title: e.target.value})} className="w-full rounded border-gray-300 dark:border-gray-700 dark:bg-gray-900" />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
@@ -190,10 +220,22 @@ export default function OkrManagement({ auth }) {
                                     <input required type="date" value={newObj.end_date} onChange={e => setNewObj({...newObj, end_date: e.target.value})} className="w-full rounded border-gray-300 dark:border-gray-700 dark:bg-gray-900" />
                                 </div>
                             </div>
-                            {auth.user.hasRole?.['admin'] && (
+                            {isAdminOrHr && (
                                 <div>
-                                    <label className="block text-sm font-medium mb-1">Employee ID</label>
-                                    <input type="number" value={newObj.employee_id} onChange={e => setNewObj({...newObj, employee_id: e.target.value})} className="w-full rounded border-gray-300 dark:border-gray-700 dark:bg-gray-900" />
+                                    <label className="block text-sm font-medium mb-1">Penanggung Jawab (Karyawan)</label>
+                                    <select 
+                                        required
+                                        value={newObj.employee_id} 
+                                        onChange={e => setNewObj({...newObj, employee_id: e.target.value})} 
+                                        className="w-full rounded border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-sm"
+                                    >
+                                        <option value="">Pilih Karyawan...</option>
+                                        {employees.map(emp => (
+                                            <option key={emp.id} value={emp.id}>
+                                                {emp.user?.name} ({emp.department_id} - {emp.employee_code})
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
                             )}
                             <div className="flex justify-end gap-2 mt-6">
