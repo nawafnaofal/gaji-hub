@@ -58,13 +58,11 @@ export default function OvertimeIndex({ auth }) {
     };
 
     const canApprove = (ot) => {
-        if (!isEmployee) {
-            return ot.status === 'pending_hr' || ot.status === 'pending';
-        }
-        return ot.employee?.user_id !== auth.user.id && ot.status === 'pending_manager';
+        if (isEmployee) return false;
+        return ot.status === 'pending_hr' || ot.status === 'pending' || ot.status === 'pending_manager';
     };
 
-    const showActionColumn = !isEmployee || overtimes.some(canApprove);
+    const showActionColumn = !isEmployee;
 
     return (
         <AuthenticatedLayout

@@ -95,13 +95,11 @@ export default function LeaveIndex({ auth }) {
     };
 
     const canApprove = (leave) => {
-        if (!isEmployee) {
-            return leave.status === 'pending_hr' || leave.status === 'pending';
-        }
-        return leave.employee?.user_id !== auth.user.id && leave.status === 'pending_manager';
+        if (isEmployee) return false;
+        return leave.status === 'pending_hr' || leave.status === 'pending' || leave.status === 'pending_manager';
     };
 
-    const showActionColumn = !isEmployee || leaves.some(canApprove);
+    const showActionColumn = !isEmployee;
 
     return (
         <AuthenticatedLayout

@@ -70,13 +70,11 @@ export default function ReimbursementIndex({ auth }) {
     };
 
     const canApprove = (claim) => {
-        if (!isEmployee) {
-            return claim.status === 'pending_hr' || claim.status === 'pending';
-        }
-        return claim.employee?.user_id !== auth.user.id && claim.status === 'pending_manager';
+        if (isEmployee) return false;
+        return claim.status === 'pending_hr' || claim.status === 'pending' || claim.status === 'pending_manager';
     };
 
-    const showActionColumn = !isEmployee || claims.some(canApprove);
+    const showActionColumn = !isEmployee;
 
     const formatRupiah = (number) => {
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(number);

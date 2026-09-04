@@ -97,13 +97,11 @@ export default function CashAdvanceIndex({ auth }) {
     };
 
     const canApprove = (item) => {
-        if (!isEmployee) {
-            return item.status === 'pending_hr' || item.status === 'pending';
-        }
-        return item.employee?.user_id !== auth.user.id && item.status === 'pending_manager';
+        if (isEmployee) return false;
+        return item.status === 'pending_hr' || item.status === 'pending' || item.status === 'pending_manager';
     };
 
-    const showActionColumn = !isEmployee || cashAdvances.some(canApprove);
+    const showActionColumn = !isEmployee;
 
     return (
         <AuthenticatedLayout
@@ -119,7 +117,7 @@ export default function CashAdvanceIndex({ auth }) {
                             
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-lg font-bold flex items-center gap-2">
-                                    <Banknote size={20} /> Data Kasbon Karyawan
+                                    <Banknote size={20} /> {isEmployee ? 'Riwayat Kasbon Saya' : 'Data Kasbon Karyawan'}
                                 </h3>
                                 <button 
                                     onClick={() => setShowModal(true)}
@@ -134,7 +132,7 @@ export default function CashAdvanceIndex({ auth }) {
                                     <thead>
                                         <tr className="bg-gray-100 dark:bg-gray-700/50 border-b dark:border-gray-700">
                                             <th className="p-4 font-semibold">Tanggal</th>
-                                            <th className="p-4 font-semibold">Karyawan</th>
+                                            {!isEmployee && <th className="p-4 font-semibold">Karyawan</th>}
                                             <th className="p-4 font-semibold">Nominal</th>
                                             <th className="p-4 font-semibold">Keterangan</th>
                                             <th className="p-4 font-semibold text-center">Status</th>
@@ -145,17 +143,19 @@ export default function CashAdvanceIndex({ auth }) {
                                     </thead>
                                     <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                                         {loading ? (
-                                            <tr><td colSpan="6" className="p-8 text-center text-gray-500">Memuat data...</td></tr>
+                                            <tr><td colSpan={!isEmployee ? "6" : "4"} className="p-8 text-center text-gray-500">Memuat data...</td></tr>
                                         ) : cashAdvances.length === 0 ? (
-                                            <tr><td colSpan="6" className="p-8 text-center text-gray-500">Belum ada data kasbon.</td></tr>
+                                            <tr><td colSpan={!isEmployee ? "6" : "4"} className="p-8 text-center text-gray-500">Belum ada data kasbon.</td></tr>
                                         ) : (
                                             cashAdvances.map(item => (
                                                 <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
                                                     <td className="p-4 text-sm">{item.date}</td>
-                                                    <td className="p-4">
-                                                        <div className="font-medium text-gray-800 dark:text-gray-200">{item.employee?.user?.name}</div>
-                                                        <div className="text-xs text-gray-500">{item.employee?.employee_code}</div>
-                                                    </td>
+                                                    {!isEmployee && (
+                                                        <td className="p-4">
+                                                            <div className="font-medium text-gray-800 dark:text-gray-200">{item.employee?.user?.name}</div>
+                                                            <div className="text-xs text-gray-500">{item.employee?.employee_code}</div>
+                                                        </td>
+                                                    )}
                                                     <td className="p-4 font-semibold text-gray-700 dark:text-gray-300">
                                                         {formatCurrency(item.amount)}
                                                     </td>
@@ -176,7 +176,7 @@ export default function CashAdvanceIndex({ auth }) {
                                                         <td className="p-4 text-center">
                                                             {canApprove(item) && (
                                                                 <div className="flex justify-center gap-2">
-                                                                    <button onClick={() => updateStatus(item.id, isEmployee ? 'pending_hr' : 'approved')} className="text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 p-1 rounded transition" title="Setujui">
+                                                                    <button onClick={() => updateStatus(item.id, 'approved')} className="text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 p-1 rounded transition" title="Setujui">
                                                                         <CheckCircle size={18} />
                                                                     </button>
                                                                     <button onClick={() => updateStatus(item.id, 'rejected')} className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 p-1 rounded transition" title="Tolak">
