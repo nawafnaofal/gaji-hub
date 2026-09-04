@@ -120,9 +120,6 @@ export default function AuthenticatedLayout({ header, children }) {
                     <SidebarLink href={route('company-documents')} active={route().current('company-documents')} icon={FileCheck}>
                         Dokumen Perusahaan
                     </SidebarLink>
-                    <SidebarLink href={route('assets')} active={route().current('assets')} icon={Laptop}>
-                        Manajemen Aset
-                    </SidebarLink>
 
                     {isAdminOrHr && (
                         <>
@@ -132,6 +129,9 @@ export default function AuthenticatedLayout({ header, children }) {
                             </SidebarLink>
                             <SidebarLink href={route('warning-letters')} active={route().current('warning-letters')} icon={ShieldAlert}>
                                 Surat Peringatan (SP)
+                            </SidebarLink>
+                            <SidebarLink href={route('assets')} active={route().current('assets')} icon={Laptop}>
+                                Manajemen Aset
                             </SidebarLink>
                             <SidebarLink href={route('org-chart')} active={route().current('org-chart')} icon={Network}>
                                 Struktur Organisasi

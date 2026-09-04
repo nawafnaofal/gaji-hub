@@ -11,16 +11,20 @@ export default function CashAdvanceIndex({ auth }) {
     const [loading, setLoading] = useState(true);
     const [errors, setErrors] = useState({});
     
+    const isEmployee = auth.user.role === 'employee';
+
     const [formData, setFormData] = useState({
-        employee_id: '',
-        date: '',
+        employee_id: auth.user.employee?.id || '',
+        date: new Date().toISOString().split('T')[0],
         amount: '',
         reason: ''
     });
 
     useEffect(() => {
         fetchCashAdvances();
-        fetchEmployees();
+        if (!isEmployee) {
+            fetchEmployees();
+        }
     }, []);
 
     const fetchCashAdvances = async () => {
@@ -52,9 +56,18 @@ export default function CashAdvanceIndex({ auth }) {
         e.preventDefault();
         setErrors({});
         try {
-            await axios.post('/api/v1/cash-advances', formData);
+            const payload = {
+                ...formData,
+                employee_id: isEmployee ? auth.user.employee?.id : formData.employee_id
+            };
+            await axios.post('/api/v1/cash-advances', payload);
             setShowModal(false);
-            setFormData({ employee_id: '', date: '', amount: '', reason: '' });
+            setFormData({ 
+                employee_id: isEmployee ? auth.user.employee?.id : '', 
+                date: new Date().toISOString().split('T')[0], 
+                amount: '', 
+                reason: '' 
+            });
             fetchCashAdvances();
             alert('Pengajuan kasbon berhasil dikirim!');
         } catch (error) {
@@ -82,8 +95,6 @@ export default function CashAdvanceIndex({ auth }) {
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(amount);
     };
-
-    const isEmployee = auth.user.role === 'employee';
 
     const canApprove = (item) => {
         if (!isEmployee) {
@@ -196,16 +207,23 @@ export default function CashAdvanceIndex({ auth }) {
                             <button onClick={() => setShowModal(false)} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">&times;</button>
                         </div>
                         <form onSubmit={handleSubmit} className="p-4 space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Karyawan</label>
-                                <select name="employee_id" value={formData.employee_id} onChange={handleInputChange} className="w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-md text-sm">
-                                    <option value="">Pilih Karyawan...</option>
-                                    {employees.map(emp => (
-                                        <option key={emp.id} value={emp.id}>{emp.user?.name} - {emp.employee_code}</option>
-                                    ))}
-                                </select>
-                                {errors.employee_id && <p className="text-red-500 text-xs mt-1">{errors.employee_id[0]}</p>}
-                            </div>
+                            {!isEmployee ? (
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Karyawan</label>
+                                    <select name="employee_id" value={formData.employee_id} onChange={handleInputChange} className="w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-md text-sm">
+                                        <option value="">Pilih Karyawan...</option>
+                                        {employees.map(emp => (
+                                            <option key={emp.id} value={emp.id}>{emp.user?.name} - {emp.employee_code}</option>
+                                        ))}
+                                    </select>
+                                    {errors.employee_id && <p className="text-red-500 text-xs mt-1">{errors.employee_id[0]}</p>}
+                                </div>
+                            ) : (
+                                <div className="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg border border-gray-200 dark:border-gray-600">
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">Pengaju (Diri Sendiri)</p>
+                                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{auth.user.name} ({auth.user.employee?.employee_code || '-'})</p>
+                                </div>
+                            )}
                             
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tanggal Pengajuan</label>

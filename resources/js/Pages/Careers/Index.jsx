@@ -10,7 +10,7 @@ export default function Careers() {
     const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
 
     useEffect(() => {
-        axios.get('/api/v1/recruitment/positions')
+        axios.get('/api/v1/recruitment/public/positions')
             .then(res => {
                 setPositions(res.data.data.filter(p => p.status === 'open'));
                 setLoading(false);

@@ -18,6 +18,7 @@ Route::get('/careers', function () {
     return Inertia::render('Careers/Index');
 })->name('careers');
 
+Route::get('/api/v1/recruitment/public/positions', [\App\Http\Controllers\Api\RecruitmentController::class, 'getPositions']);
 Route::post('/api/v1/recruitment/public/apply', [\App\Http\Controllers\Api\RecruitmentController::class, 'applyPublic']);
 
 Route::get('/dashboard', function () {
@@ -26,11 +27,11 @@ Route::get('/dashboard', function () {
 
 Route::get('/payroll', function () {
     return Inertia::render('Payroll/Index');
-})->middleware(['auth', 'verified'])->name('payroll');
+})->middleware(['auth', 'verified', 'role:admin,hr'])->name('payroll');
 
 Route::get('/payroll/{id}', function ($id) {
     return Inertia::render('Payroll/Show', ['payroll_id' => $id]);
-})->middleware(['auth', 'verified'])->name('payroll.show');
+})->middleware(['auth', 'verified', 'role:admin,hr'])->name('payroll.show');
 
 Route::get('/my-payslips', function () {
     return Inertia::render('Payroll/MyPayslip');
@@ -75,7 +76,7 @@ Route::get('/holidays', function () {
 
 Route::get('/company-documents', function () {
     return Inertia::render('CompanyDocument/Index');
-})->middleware(['auth', 'verified', 'role:admin,hr'])->name('company-documents');
+})->middleware(['auth', 'verified'])->name('company-documents');
 
 Route::get('/recruitment', function () {
     return Inertia::render('Recruitment/Index');
@@ -83,11 +84,11 @@ Route::get('/recruitment', function () {
 
 Route::get('/okr', function () {
     return Inertia::render('Okr/Index');
-})->middleware(['auth', 'verified'])->name('okr');
+})->middleware(['auth', 'verified', 'role:admin,hr'])->name('okr');
 
 Route::get('/assets', function () {
     return Inertia::render('Asset/Index');
-})->middleware(['auth', 'verified'])->name('assets');
+})->middleware(['auth', 'verified', 'role:admin,hr'])->name('assets');
 
 Route::get('/loans', function () {
     return Inertia::render('Loan/Index');
@@ -95,7 +96,7 @@ Route::get('/loans', function () {
 
 Route::get('/performance-reviews', function () {
     return Inertia::render('PerformanceReview/Index');
-})->middleware(['auth', 'verified'])->name('performance-reviews');
+})->middleware(['auth', 'verified', 'role:admin,hr'])->name('performance-reviews');
 
 Route::get('/org-chart', function () {
     return Inertia::render('OrgChart/Index');
@@ -127,7 +128,7 @@ Route::get('/resignations', function () {
 
 Route::get('/warning-letters', function () {
     return Inertia::render('WarningLetter/Index');
-})->middleware(['auth', 'verified'])->name('warning-letters');
+})->middleware(['auth', 'verified', 'role:admin,hr'])->name('warning-letters');
 
 Route::get('/salary-simulator', function () {
     return Inertia::render('SalarySimulator/Index');
