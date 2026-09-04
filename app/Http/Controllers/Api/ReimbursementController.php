@@ -16,14 +16,11 @@ class ReimbursementController extends Controller
     {
         $user = Auth::user();
         if ($user->role === 'employee') {
-            $employeeId = $user->employee ? $user->employee->id : null;
+            $employeeId = $user->employee ? $user->employee->id : 0;
             $claims = Reimbursement::with('employee.user')
-                ->where(function($q) use ($employeeId) {
-                    $q->where('employee_id', $employeeId)
-                      ->orWhereHas('employee', function($subQ) use ($employeeId) {
-                          $subQ->where('manager_id', $employeeId);
-                      });
-                })->orderBy('created_at', 'desc')->get();
+                ->where('employee_id', $employeeId)
+                ->orderBy('created_at', 'desc')
+                ->get();
         } else {
             // HR/Admin view all
             $claims = Reimbursement::with('employee.user')->orderBy('created_at', 'desc')->get();

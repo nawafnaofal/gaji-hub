@@ -14,14 +14,11 @@ class OvertimeController extends Controller
     {
         $user = Auth::user();
         if ($user->role === 'employee') {
-            $employeeId = $user->employee ? $user->employee->id : null;
+            $employeeId = $user->employee ? $user->employee->id : 0;
             $overtimes = Overtime::with('employee.user')
-                ->where(function($q) use ($employeeId) {
-                    $q->where('employee_id', $employeeId)
-                      ->orWhereHas('employee', function($subQ) use ($employeeId) {
-                          $subQ->where('manager_id', $employeeId);
-                      });
-                })->orderBy('created_at', 'desc')->get();
+                ->where('employee_id', $employeeId)
+                ->orderBy('created_at', 'desc')
+                ->get();
         } else {
             $overtimes = Overtime::with('employee.user')->orderBy('created_at', 'desc')->get();
         }

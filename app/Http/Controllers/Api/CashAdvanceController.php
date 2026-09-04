@@ -12,14 +12,11 @@ class CashAdvanceController extends Controller
     {
         $user = \Illuminate\Support\Facades\Auth::user();
         if ($user->role === 'employee') {
-            $employeeId = $user->employee ? $user->employee->id : null;
+            $employeeId = $user->employee ? $user->employee->id : 0;
             $cashAdvances = CashAdvance::with('employee.user')
-                ->where(function($q) use ($employeeId) {
-                    $q->where('employee_id', $employeeId)
-                      ->orWhereHas('employee', function($subQ) use ($employeeId) {
-                          $subQ->where('manager_id', $employeeId);
-                      });
-                })->orderBy('date', 'desc')->get();
+                ->where('employee_id', $employeeId)
+                ->orderBy('date', 'desc')
+                ->get();
         } else {
             $cashAdvances = CashAdvance::with('employee.user')->orderBy('date', 'desc')->get();
         }
