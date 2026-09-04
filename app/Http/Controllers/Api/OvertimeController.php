@@ -33,8 +33,8 @@ class OvertimeController extends Controller
     {
         $request->validate([
             'date' => 'required|date',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
+            'start_time' => 'required',
+            'end_time' => 'required',
             'reason' => 'required|string',
         ]);
 
@@ -45,16 +45,10 @@ class OvertimeController extends Controller
 
         $start = Carbon::parse($request->start_time);
         $end = Carbon::parse($request->end_time);
-        $durationHours = $end->diffInMinutes($start) / 60;
-
-        $overtime = Overtime::create([
-            'employee_id' => $employee->id,
-            'date' => $request->date,
-            'start_time' => $request->start_time,
-            'end_time' => $request->end_time,
-            'duration_hours' => round($durationHours, 2),
-            'reason' => $request->reason,
-        ]);
+        if ($end->lt($start)) {
+            $end->addDay();
+        }
+        $durationHours = max(0.5, round($end->diffInMinutes($start) / 60, 2));
 
         $status = 'pending_hr';
         if ($employee->manager_id) {
@@ -70,8 +64,16 @@ class OvertimeController extends Controller
                 $status = 'pending_hr';
             }
         }
-        $overtime->status = $status;
-        $overtime->save();
+
+        $overtime = Overtime::create([
+            'employee_id' => $employee->id,
+            'date' => $request->date,
+            'start_time' => $request->start_time,
+            'end_time' => $request->end_time,
+            'duration_hours' => $durationHours,
+            'reason' => $request->reason,
+            'status' => $status
+        ]);
 
         $this->notifyManagerOrHR(
             $employee,

@@ -85,15 +85,30 @@ export default function Recruitment({ auth }) {
                                     
                                     <div className="flex-1 overflow-y-auto space-y-4 pr-1 custom-scrollbar">
                                         {applications.filter(a => a.status === status).map(app => (
-                                            <div key={app.id} className="bg-white dark:bg-gray-700 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600">
-                                                <h5 className="font-bold text-sm mb-1">{app.candidate?.name}</h5>
-                                                <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-3">{app.job_position?.title}</p>
-                                                
-                                                <div className="flex gap-2">
+                                            <div key={app.id} className="bg-white dark:bg-gray-700 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-600 space-y-2.5">
+                                                <div>
+                                                    <h5 className="font-bold text-sm text-gray-900 dark:text-white">{app.candidate?.name}</h5>
+                                                    <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold">{app.job_position?.title}</p>
+                                                </div>
+                                                <div className="text-[11px] text-gray-500 dark:text-gray-300 space-y-0.5 border-t dark:border-gray-600 pt-2">
+                                                    <p className="truncate">✉️ {app.candidate?.email || '-'}</p>
+                                                    {app.candidate?.phone && <p>📞 {app.candidate?.phone}</p>}
+                                                </div>
+                                                {app.candidate?.resume_path && (
+                                                    <a 
+                                                        href={`/storage/${app.candidate.resume_path}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 hover:underline"
+                                                    >
+                                                        📄 Lihat Resume / CV
+                                                    </a>
+                                                )}
+                                                <div className="flex gap-2 pt-1">
                                                     <select 
                                                         value={app.status}
                                                         onChange={(e) => updateAppStatus(app.id, e.target.value)}
-                                                        className="text-xs rounded border-gray-300 dark:border-gray-600 dark:bg-gray-800 py-1 flex-1"
+                                                        className="text-xs rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-800 py-1.5 flex-1 font-medium"
                                                     >
                                                         <option value="applied">Applied</option>
                                                         <option value="reviewed">Reviewed</option>

@@ -96,6 +96,21 @@ export default function OvertimeIndex({ auth }) {
                                         <input type="time" required className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm" value={form.end_time} onChange={e => setForm({...form, end_time: e.target.value})} />
                                     </div>
                                 </div>
+                                {(() => {
+                                    if (!form.start_time || !form.end_time) return null;
+                                    const [sh, sm] = form.start_time.split(':').map(Number);
+                                    const [eh, em] = form.end_time.split(':').map(Number);
+                                    let startMins = sh * 60 + (sm || 0);
+                                    let endMins = eh * 60 + (em || 0);
+                                    if (endMins < startMins) endMins += 24 * 60;
+                                    const diff = ((endMins - startMins) / 60).toFixed(1);
+                                    return (
+                                        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg text-xs font-semibold flex items-center gap-2">
+                                            <Clock size={16} />
+                                            <span>Estimasi Durasi Lembur: <strong>{diff} Jam</strong></span>
+                                        </div>
+                                    );
+                                })()}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Keterangan Pekerjaan</label>
                                     <textarea required rows="3" className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})}></textarea>
