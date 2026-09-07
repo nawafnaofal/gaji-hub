@@ -86,7 +86,7 @@ export default function Dashboard() {
     const getLocation = () => {
         return new Promise((resolve, reject) => {
             if (!navigator.geolocation) {
-                reject(new Error("Geolocation is not supported by your browser"));
+                reject(new Error("Perangkat atau browser Anda tidak mendukung fitur Geolocation"));
             } else {
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
@@ -96,8 +96,13 @@ export default function Dashboard() {
                         });
                     },
                     (error) => {
-                        reject(error);
-                    }
+                        let msg = "Gagal mendeteksi lokasi.";
+                        if (error.code === 1) msg = "Izin akses lokasi (GPS) ditolak. Silakan aktifkan izin lokasi di browser Anda.";
+                        else if (error.code === 2) msg = "Sinyal GPS atau jaringan tidak tersedia.";
+                        else if (error.code === 3) msg = "Waktu pencarian lokasi habis (timeout). Silakan coba lagi.";
+                        reject(new Error(msg));
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
                 );
             }
         });

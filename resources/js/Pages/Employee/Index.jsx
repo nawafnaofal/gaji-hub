@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
-import { PlusCircle, Users, FileText, Trash2, Upload, Edit, Trash, FileCheck } from 'lucide-react';
+import { PlusCircle, Users, FileText, Trash2, Upload, Edit, Trash, FileCheck, Search, Filter } from 'lucide-react';
 
 export default function EmployeeIndex({ auth }) {
     const [employees, setEmployees] = useState([]);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
     const [showModal, setShowModal] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editId, setEditId] = useState(null);
@@ -242,11 +244,32 @@ export default function EmployeeIndex({ auth }) {
                                 </div>
                             )}
 
-                            <div className="flex justify-between items-center mb-6">
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                                 <h3 className="text-lg font-bold flex items-center gap-2">
                                     <Users size={20} /> Data Induk Karyawan {filterExpiring && <span className="text-xs font-normal text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 rounded-full">(Filter Kontrak Berakhir)</span>}
                                 </h3>
-                                <div className="flex items-center gap-2">
+                                <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                                    <div className="relative flex-1 md:w-64">
+                                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                        <input
+                                            type="text"
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            placeholder="Cari nama, NIK, email, jabatan..."
+                                            className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:ring-blue-500 focus:border-blue-500"
+                                        />
+                                    </div>
+                                    <select
+                                        value={statusFilter}
+                                        onChange={(e) => setStatusFilter(e.target.value)}
+                                        className="py-1.5 px-3 text-xs rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:ring-blue-500 focus:border-blue-500"
+                                    >
+                                        <option value="all">Semua Status</option>
+                                        <option value="permanent">Permanent (Tetap)</option>
+                                        <option value="contract">Contract (Kontrak)</option>
+                                        <option value="internship">Internship (Magang)</option>
+                                        <option value="resigned">Resigned (Keluar)</option>
+                                    </select>
                                     <button 
                                         onClick={() => setShowImportModal(true)}
                                         className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded text-sm font-semibold flex items-center gap-1.5 transition shadow-sm"
@@ -274,12 +297,33 @@ export default function EmployeeIndex({ auth }) {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {(filterExpiring ? employees.filter(e => e.is_expiring_soon) : employees).length === 0 ? (
-                                            <tr>
-                                                <td colSpan="5" className="p-4 text-center text-gray-500 dark:text-gray-400">Belum ada data karyawan.</td>
-                                            </tr>
-                                        ) : (
-                                            (filterExpiring ? employees.filter(e => e.is_expiring_soon) : employees).map(emp => (
+                                        {(() => {
+                                            const filtered = employees.filter(emp => {
+                                                if (filterExpiring && !emp.is_expiring_soon) return false;
+                                                if (statusFilter !== 'all' && emp.employment_status !== statusFilter) return false;
+                                                if (searchQuery.trim()) {
+                                                    const q = searchQuery.toLowerCase();
+                                                    const nameMatch = emp.user?.name?.toLowerCase().includes(q);
+                                                    const emailMatch = emp.user?.email?.toLowerCase().includes(q);
+                                                    const codeMatch = emp.employee_code?.toLowerCase().includes(q);
+                                                    const jobMatch = emp.job_title?.toLowerCase().includes(q);
+                                                    const deptMatch = String(emp.department_id || '').toLowerCase().includes(q);
+                                                    if (!nameMatch && !emailMatch && !codeMatch && !jobMatch && !deptMatch) return false;
+                                                }
+                                                return true;
+                                            });
+
+                                            if (filtered.length === 0) {
+                                                return (
+                                                    <tr>
+                                                        <td colSpan="5" className="p-8 text-center text-gray-500 dark:text-gray-400">
+                                                            {searchQuery ? `Tidak ada karyawan yang cocok dengan "${searchQuery}".` : 'Belum ada data karyawan.'}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            }
+
+                                            return filtered.map(emp => (
                                                 <tr key={emp.id} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                                     <td className="p-4">
                                                         <div className="font-medium text-gray-800 dark:text-gray-200">{emp.user?.name}</div>
@@ -344,8 +388,8 @@ export default function EmployeeIndex({ auth }) {
                                                         </div>
                                                     </td>
                                                 </tr>
-                                            ))
-                                        )}
+                                            ));
+                                        })()}
                                     </tbody>
                                 </table>
                             </div>

@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
-import { DollarSign, CheckCircle, XCircle, FileText, Eye } from 'lucide-react';
+import { DollarSign, CheckCircle, XCircle, FileText, Eye, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function ReimbursementIndex({ auth }) {
     const [claims, setClaims] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
     const [previewUrl, setPreviewUrl] = useState(null);
 
     const [form, setForm] = useState({
@@ -36,6 +38,7 @@ export default function ReimbursementIndex({ auth }) {
 
     const submitClaim = async (e) => {
         e.preventDefault();
+        setSubmitting(true);
 
         const formData = new FormData();
         formData.append('date', form.date);
@@ -49,12 +52,14 @@ export default function ReimbursementIndex({ auth }) {
             await axios.post('/api/v1/reimbursements', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            alert('Klaim berhasil diajukan!');
+            toast.success('Pengajuan reimbursement berhasil dikirim!');
             setForm({ date: '', amount: '', description: '', attachment: null });
             fetchClaims();
         } catch (error) {
             console.error(error);
-            alert(error.response?.data?.message || 'Gagal mengajukan klaim.');
+            toast.error(error.response?.data?.message || 'Gagal mengajukan klaim.');
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -62,10 +67,11 @@ export default function ReimbursementIndex({ auth }) {
         if (!confirm(`Anda yakin ingin memproses ini?`)) return;
         try {
             await axios.put(`/api/v1/reimbursements/${id}`, { status });
+            toast.success('Status klaim berhasil diperbarui.');
             fetchClaims();
         } catch (error) {
             console.error(error);
-            alert(error.response?.data?.message || 'Gagal mengupdate status.');
+            toast.error(error.response?.data?.message || 'Gagal mengupdate status.');
         }
     };
 
@@ -114,7 +120,19 @@ export default function ReimbursementIndex({ auth }) {
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Lampiran (Struk / Nota)</label>
                                     <input type="file" accept="image/*,.pdf" className="mt-1 block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/50 dark:file:text-blue-300" onChange={e => setForm({...form, attachment: e.target.files[0]})} />
                                 </div>
-                                <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700">Ajukan Klaim</button>
+                                <button 
+                                    type="submit" 
+                                    disabled={submitting}
+                                    className={`px-5 py-2.5 rounded-lg text-sm font-semibold shadow transition flex items-center gap-2 ${submitting ? 'bg-blue-400 text-white cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+                                >
+                                    {submitting ? (
+                                        <>
+                                            <Loader2 size={16} className="animate-spin" /> Mengirim Klaim...
+                                        </>
+                                    ) : (
+                                        'Ajukan Klaim'
+                                    )}
+                                </button>
                             </form>
                         </div>
                     )}

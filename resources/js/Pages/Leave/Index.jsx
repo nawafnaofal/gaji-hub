@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
-import { FileText, CheckCircle, XCircle, Eye, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FileText, CheckCircle, XCircle, Eye, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function LeaveIndex({ auth }) {
     const [leaves, setLeaves] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
     const [previewUrl, setPreviewUrl] = useState(null);
     const [viewMode, setViewMode] = useState('table');
     const [calendarData, setCalendarData] = useState({ leaves: [], holidays: [] });
@@ -59,6 +61,18 @@ export default function LeaveIndex({ auth }) {
     const submitLeave = async (e) => {
         e.preventDefault();
         
+        if (form.start_date && form.end_date && form.end_date < form.start_date) {
+            toast.error('Tanggal selesai tidak boleh lebih awal dari tanggal mulai!');
+            return;
+        }
+
+        if (form.type === 'sick' && !form.attachment) {
+            if (!confirm('Pengajuan cuti sakit disarankan melampirkan surat dokter. Apakah Anda ingin melanjutkan tanpa lampiran?')) {
+                return;
+            }
+        }
+
+        setSubmitting(true);
         const formData = new FormData();
         formData.append('type', form.type);
         formData.append('start_date', form.start_date);
@@ -74,12 +88,14 @@ export default function LeaveIndex({ auth }) {
                     'Content-Type': 'multipart/form-data'
                 }
             });
-            alert('Cuti berhasil diajukan!');
+            toast.success('Pengajuan cuti berhasil dikirim!');
             setForm({ type: 'annual', start_date: '', end_date: '', reason: '', attachment: null });
             fetchLeaves();
         } catch (error) {
             console.error(error);
-            alert(error.response?.data?.message || 'Gagal mengajukan cuti.');
+            toast.error(error.response?.data?.message || 'Gagal mengajukan cuti.');
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -87,10 +103,11 @@ export default function LeaveIndex({ auth }) {
         if (!confirm(`Anda yakin ingin memproses ini?`)) return;
         try {
             await axios.put(`/api/v1/leaves/${id}`, { status });
+            toast.success('Status pengajuan cuti berhasil diperbarui.');
             fetchLeaves();
         } catch (error) {
             console.error(error);
-            alert(error.response?.data?.message || 'Gagal mengupdate status.');
+            toast.error(error.response?.data?.message || 'Gagal mengupdate status.');
         }
     };
 
@@ -141,7 +158,7 @@ export default function LeaveIndex({ auth }) {
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Tanggal Selesai</label>
-                                        <input type="date" required className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm" value={form.end_date} onChange={e => setForm({...form, end_date: e.target.value})} />
+                                        <input type="date" required min={form.start_date} className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm" value={form.end_date} onChange={e => setForm({...form, end_date: e.target.value})} />
                                     </div>
                                 </div>
                                 <div>
@@ -152,7 +169,19 @@ export default function LeaveIndex({ auth }) {
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Lampiran (Opsional, Wajib untuk Cuti Sakit)</label>
                                     <input type="file" accept="image/*,.pdf" className="mt-1 block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/50 dark:file:text-blue-300" onChange={e => setForm({...form, attachment: e.target.files[0]})} />
                                 </div>
-                                <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700">Ajukan Cuti</button>
+                                <button 
+                                    type="submit" 
+                                    disabled={submitting}
+                                    className={`px-5 py-2.5 rounded-lg text-sm font-semibold shadow transition flex items-center gap-2 ${submitting ? 'bg-blue-400 text-white cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+                                >
+                                    {submitting ? (
+                                        <>
+                                            <Loader2 size={16} className="animate-spin" /> Mengirim Pengajuan...
+                                        </>
+                                    ) : (
+                                        'Ajukan Cuti'
+                                    )}
+                                </button>
                             </form>
                         </div>
                     )}

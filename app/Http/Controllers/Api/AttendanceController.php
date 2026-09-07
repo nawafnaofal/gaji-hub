@@ -196,7 +196,25 @@ class AttendanceController extends Controller
             return response()->json(['success' => false, 'message' => 'Anda belum melakukan clock in hari ini.'], 400);
         }
 
-        $attendance->update(['clock_out' => $currentTime]);
+        $photoPath = $attendance->photo_path;
+        if ($request->photo) {
+            try {
+                $image = $request->photo;
+                $image = str_replace('data:image/jpeg;base64,', '', $image);
+                $image = str_replace('data:image/png;base64,', '', $image);
+                $image = str_replace(' ', '+', $image);
+                $imageName = 'attendance_out_' . $employee->id . '_' . time() . '.png';
+                Storage::disk('public')->put('attendances/' . $imageName, base64_decode($image));
+                $photoPath = 'attendances/' . $imageName;
+            } catch (\Exception $e) {
+                // Ignore failure to ensure clock out completes
+            }
+        }
+
+        $attendance->update([
+            'clock_out' => $currentTime,
+            'photo_path' => $photoPath ?? $attendance->photo_path
+        ]);
 
         return response()->json(['success' => true, 'message' => 'Berhasil Clock Out.', 'data' => $attendance]);
     }

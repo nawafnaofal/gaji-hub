@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
-import { Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function OvertimeIndex({ auth }) {
     const [overtimes, setOvertimes] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
 
     const [form, setForm] = useState({
         date: '',
@@ -35,14 +37,17 @@ export default function OvertimeIndex({ auth }) {
 
     const submitOvertime = async (e) => {
         e.preventDefault();
+        setSubmitting(true);
         try {
             await axios.post('/api/v1/overtimes', form);
-            alert('Lembur berhasil diajukan!');
+            toast.success('Pengajuan lembur berhasil dikirim!');
             setForm({ date: '', start_time: '', end_time: '', reason: '' });
             fetchOvertimes();
         } catch (error) {
             console.error(error);
-            alert(error.response?.data?.message || 'Gagal mengajukan lembur.');
+            toast.error(error.response?.data?.message || 'Gagal mengajukan lembur.');
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -50,10 +55,11 @@ export default function OvertimeIndex({ auth }) {
         if (!confirm(`Anda yakin ingin memproses persetujuan ini?`)) return;
         try {
             await axios.put(`/api/v1/overtimes/${id}`, { status });
+            toast.success('Status lembur berhasil diperbarui.');
             fetchOvertimes();
         } catch (error) {
             console.error(error);
-            alert(error.response?.data?.message || 'Gagal mengupdate status.');
+            toast.error(error.response?.data?.message || 'Gagal mengupdate status.');
         }
     };
 
@@ -113,7 +119,19 @@ export default function OvertimeIndex({ auth }) {
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Keterangan Pekerjaan</label>
                                     <textarea required rows="3" className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})}></textarea>
                                 </div>
-                                <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700">Ajukan Lembur</button>
+                                <button 
+                                    type="submit" 
+                                    disabled={submitting}
+                                    className={`px-5 py-2.5 rounded-lg text-sm font-semibold shadow transition flex items-center gap-2 ${submitting ? 'bg-blue-400 text-white cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+                                >
+                                    {submitting ? (
+                                        <>
+                                            <Loader2 size={16} className="animate-spin" /> Mengirim Pengajuan...
+                                        </>
+                                    ) : (
+                                        'Ajukan Lembur'
+                                    )}
+                                </button>
                             </form>
                         </div>
                     )}

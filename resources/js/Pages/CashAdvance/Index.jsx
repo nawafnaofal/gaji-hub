@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
-import { PlusCircle, Banknote, CheckCircle, XCircle } from 'lucide-react';
+import { PlusCircle, Banknote, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function CashAdvanceIndex({ auth }) {
     const [cashAdvances, setCashAdvances] = useState([]);
     const [employees, setEmployees] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
     const [errors, setErrors] = useState({});
     
     const isEmployee = auth.user.role === 'employee';
@@ -55,6 +57,7 @@ export default function CashAdvanceIndex({ auth }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setErrors({});
+        setSubmitting(true);
         try {
             const payload = {
                 ...formData,
@@ -69,26 +72,30 @@ export default function CashAdvanceIndex({ auth }) {
                 reason: '' 
             });
             fetchCashAdvances();
-            alert('Pengajuan kasbon berhasil dikirim!');
+            toast.success('Pengajuan kasbon berhasil dikirim!');
         } catch (error) {
             if (error.response?.data?.message) {
-                alert(error.response.data.message);
+                toast.error(error.response.data.message);
+            } else {
+                toast.error('Gagal mengirim pengajuan kasbon.');
             }
             if (error.response?.status === 422 && error.response.data.errors) {
                 setErrors(error.response.data.errors);
             }
+        } finally {
+            setSubmitting(false);
         }
     };
 
     const updateStatus = async (id, status) => {
         if (!confirm(`Tandai kasbon ini sebagai ${status}?`)) return;
         try {
-            // HR/Admin use the updateStatus endpoint
             await axios.put(`/api/v1/cash-advances/${id}`, { status });
+            toast.success('Status kasbon berhasil diperbarui.');
             fetchCashAdvances();
         } catch (error) {
             console.error(error);
-            alert(error.response?.data?.message || 'Gagal mengubah status kasbon.');
+            toast.error(error.response?.data?.message || 'Gagal mengupdate status.');
         }
     };
 
@@ -248,7 +255,19 @@ export default function CashAdvanceIndex({ auth }) {
 
                             <div className="flex justify-end gap-2 pt-2 border-t dark:border-gray-700">
                                 <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded-md">Batal</button>
-                                <button type="submit" className="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-md">Simpan Ajuan</button>
+                                <button 
+                                    type="submit" 
+                                    disabled={submitting}
+                                    className={`px-4 py-2 text-sm text-white rounded-md flex items-center gap-2 ${submitting ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+                                >
+                                    {submitting ? (
+                                        <>
+                                            <Loader2 size={16} className="animate-spin" /> Menyimpan...
+                                        </>
+                                    ) : (
+                                        'Simpan Ajuan'
+                                    )}
+                                </button>
                             </div>
                         </form>
                     </div>
