@@ -240,7 +240,7 @@ export default function Dashboard() {
                                 <div className="border-t dark:border-gray-700 pt-6">
                                     <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-4">Absensi Kehadiran Hari Ini</h4>
                                     
-                                    {!stats.has_clocked_in && (
+                                    {!stats.has_clocked_out && (
                                         <div className="mb-4">
                                             <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg flex flex-col items-center">
                                                 {!stream ? (
@@ -260,7 +260,7 @@ export default function Dashboard() {
                                                             : `✗ Anda di luar jangkauan (${Math.round(distance)}m / Maks ${stats.geofencing.radius}m)`}
                                                     </div>
                                                 )}
-                                                <p className="text-xs text-gray-500 mt-2">*Kamera dan Lokasi (GPS) wajib aktif untuk Clock In.</p>
+                                                <p className="text-xs text-gray-500 mt-2">*Kamera dan Lokasi (GPS) wajib aktif untuk Absen Masuk & Pulang.</p>
                                             </div>
                                             <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
                                         </div>
@@ -276,13 +276,13 @@ export default function Dashboard() {
                                         </button>
                                         <button 
                                             onClick={handleClockOut}
-                                            disabled={!stats.has_clocked_in || stats.has_clocked_out}
-                                            className={`px-6 py-3 rounded-lg font-semibold shadow-sm transition flex items-center gap-2 ${(!stats.has_clocked_in || stats.has_clocked_out) ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700 text-white'}`}
+                                            disabled={!stats.has_clocked_in || stats.has_clocked_out || !stream || (distance !== null && stats?.geofencing && distance > stats.geofencing.radius)}
+                                            className={`px-6 py-3 rounded-lg font-semibold shadow-sm transition flex items-center gap-2 ${(!stats.has_clocked_in || stats.has_clocked_out || !stream || (distance !== null && stats?.geofencing && distance > stats.geofencing.radius)) ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700 text-white'}`}
                                         >
                                             <Clock size={18} /> Clock Out (Pulang)
                                         </button>
                                     </div>
-                                    {stats.has_clocked_in && <p className="mt-2 text-sm text-green-600 dark:text-green-400">Anda sudah absen masuk hari ini.</p>}
+                                    {stats.has_clocked_in && !stats.has_clocked_out && <p className="mt-2 text-sm text-green-600 dark:text-green-400">Anda sudah absen masuk hari ini. Silakan nyalakan kamera untuk absen pulang.</p>}
                                     {stats.has_clocked_out && <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Anda sudah absen pulang hari ini.</p>}
                                 </div>
                             </div>

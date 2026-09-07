@@ -152,7 +152,7 @@ class AttendanceController extends Controller
         $request->validate([
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
-            'photo' => 'required|string'
+            'photo' => 'nullable|string'
         ]);
 
         $employee = Auth::user()->employee;
