@@ -42,7 +42,8 @@ class PayrollController extends Controller
             // Delete existing DRAFT payroll for the same period to avoid duplicates
             Payroll::where('period_month', $month)->where('period_year', $year)->where('status', 'draft')->delete();
 
-            $employees = Employee::all();
+            // Only active employees (exclude resigned or terminated)
+            $employees = Employee::whereNotIn('employment_status', ['resigned', 'terminated'])->get();
 
             // Ambil semua komponen dari master yang global (jika ada) - kita asumsikan untuk sekarang 
             // ambil dari relasi employee_salary_components atau ambil semua komponen default
