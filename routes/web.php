@@ -169,7 +169,7 @@ Route::middleware('auth')->prefix('api/v1')->group(function () {
         
         Route::get('/payrolls/export', [\App\Http\Controllers\Api\PayrollController::class, 'exportCsv']);
         Route::get('/payrolls/export/bank', [\App\Http\Controllers\Api\PayrollController::class, 'exportBankTransfer']);
-        Route::post('/payrolls/generate', [\App\Http\Controllers\Api\PayrollController::class, 'generate']);
+        Route::post('/payrolls/generate', [\App\Http\Controllers\Api\PayrollController::class, 'generate'])->middleware('throttle:payroll');
         Route::post('/payrolls/{id}/approve', [\App\Http\Controllers\Api\PayrollController::class, 'approve']);
         Route::post('/payrolls/{id}/disburse', [\App\Http\Controllers\Api\PayrollController::class, 'disburse']);
         Route::get('/dashboard/stats', [\App\Http\Controllers\Api\DashboardController::class, 'stats']);
@@ -237,7 +237,7 @@ Route::middleware('auth')->prefix('api/v1')->group(function () {
         Route::put('/warning-letters/{id}/revoke', [\App\Http\Controllers\Api\WarningLetterController::class, 'revoke']);
 
         // Employee Bulk CSV Import
-        Route::post('/employees/import-csv', [\App\Http\Controllers\Api\EmployeeController::class, 'importCsv']);
+        Route::post('/employees/import-csv', [\App\Http\Controllers\Api\EmployeeController::class, 'importCsv'])->middleware('throttle:import');
     });
     
     // Shared API
@@ -281,8 +281,8 @@ Route::middleware('auth')->prefix('api/v1')->group(function () {
     Route::get('/overtimes', [\App\Http\Controllers\Api\OvertimeController::class, 'index']);
     Route::post('/overtimes', [\App\Http\Controllers\Api\OvertimeController::class, 'store']);
     
-    Route::post('/attendances/clock-in', [\App\Http\Controllers\Api\AttendanceController::class, 'clockIn']);
-    Route::post('/attendances/clock-out', [\App\Http\Controllers\Api\AttendanceController::class, 'clockOut']);
+    Route::post('/attendances/clock-in', [\App\Http\Controllers\Api\AttendanceController::class, 'clockIn'])->middleware('throttle:attendance');
+    Route::post('/attendances/clock-out', [\App\Http\Controllers\Api\AttendanceController::class, 'clockOut'])->middleware('throttle:attendance');
     
     Route::get('/payrolls/{id}', [\App\Http\Controllers\Api\PayrollController::class, 'show']);
     Route::get('/payrolls/{id}/slip', [\App\Http\Controllers\Api\PayrollController::class, 'downloadSlip']);

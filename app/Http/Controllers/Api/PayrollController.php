@@ -14,6 +14,7 @@ use App\Models\SalaryComponent;
 use App\Models\Overtime;
 use App\Models\CompanySetting;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class PayrollController extends Controller
 {
@@ -299,12 +300,24 @@ class PayrollController extends Controller
 
             DB::commit();
 
+            Log::info('[PAYROLL] Payroll generated for period {month}/{year}', [
+                'month' => $month,
+                'year' => $year,
+                'employee_count' => $generatedCount,
+                'generated_by' => Auth::user()->name,
+            ]);
+
             return response()->json([
                 'success' => true,
                 'message' => "Payroll berhasil di-generate untuk {$generatedCount} karyawan."
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('[PAYROLL] Failed to generate payroll for period {month}/{year}', [
+                'month' => $month,
+                'year' => $year,
+                'error' => $e->getMessage(),
+            ]);
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
@@ -475,6 +488,13 @@ class PayrollController extends Controller
             'status' => 'approved',
         ]);
 
+        Log::info('[PAYROLL] Payroll #{id} approved', [
+            'id' => $payroll->id,
+            'employee' => $payroll->employee->user->name ?? 'unknown',
+            'period' => "{$payroll->period_month}/{$payroll->period_year}",
+            'approved_by' => Auth::user()->name,
+        ]);
+
         return response()->json(['success' => true, 'message' => 'Payroll berhasil disetujui (Approved).', 'data' => $payroll]);
     }
 
@@ -491,7 +511,14 @@ class PayrollController extends Controller
         
         $payroll->update([
             'status' => 'paid',
-            // Ideally record a transaction ID here
+        ]);
+
+        Log::info('[PAYROLL] Payroll #{id} disbursed', [
+            'id' => $payroll->id,
+            'employee' => $payroll->employee->user->name ?? 'unknown',
+            'net_salary' => $payroll->net_salary,
+            'period' => "{$payroll->period_month}/{$payroll->period_year}",
+            'disbursed_by' => Auth::user()->name,
         ]);
 
         $this->notifyEmployee($payroll->employee, 'Gaji Dicairkan', 'Gaji bulan ' . $payroll->period_month . '/' . $payroll->period_year . ' telah ditransfer ke rekening Anda.', '/payroll', 'success');

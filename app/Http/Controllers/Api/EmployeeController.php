@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Http\Requests\EmployeeRequest;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class EmployeeController extends Controller
 {
@@ -92,6 +93,13 @@ class EmployeeController extends Controller
 
             DB::commit();
 
+            Log::info('[EMPLOYEE] New employee created', [
+                'employee_id' => $employee->id,
+                'name' => $request->name,
+                'email' => $request->email,
+                'created_by' => auth()->user()->name,
+            ]);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Karyawan berhasil ditambahkan.',
@@ -141,6 +149,12 @@ class EmployeeController extends Controller
 
             DB::commit();
 
+            Log::info('[EMPLOYEE] Employee #{id} updated', [
+                'id' => $employee->id,
+                'name' => $request->name,
+                'updated_by' => auth()->user()->name,
+            ]);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Data karyawan berhasil diubah.',
@@ -157,9 +171,16 @@ class EmployeeController extends Controller
         try {
             $employee = Employee::findOrFail($id);
             $user = $employee->user;
+            $employeeName = $user->name;
             
             $employee->delete();
             $user->delete();
+
+            Log::warning('[EMPLOYEE] Employee #{id} deleted', [
+                'id' => $id,
+                'name' => $employeeName,
+                'deleted_by' => auth()->user()->name,
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -255,6 +276,12 @@ class EmployeeController extends Controller
 
             DB::commit();
             fclose($handle);
+
+            Log::info('[EMPLOYEE] CSV import completed', [
+                'imported' => $imported,
+                'skipped' => $skipped,
+                'imported_by' => auth()->user()->name,
+            ]);
 
             return response()->json([
                 'success' => true,

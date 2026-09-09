@@ -3,28 +3,44 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\LeaveRequest;
 use Illuminate\Http\Request;
 
 use App\Models\Leave;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class LeaveController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
+        $perPage = $request->query('per_page', 25);
+
+        $query = Leave::with('employee.user')->orderBy('created_at', 'desc');
+
         if ($user->role === 'employee') {
             $employeeId = $user->employee ? $user->employee->id : 0;
-            $leaves = Leave::with('employee.user')
-                ->where('employee_id', $employeeId)
-                ->orderBy('created_at', 'desc')
-                ->get();
-        } else {
-            // HR/Admin view all
-            $leaves = Leave::with('employee.user')->orderBy('created_at', 'desc')->get();
+            $query->where('employee_id', $employeeId);
         }
+
+        // Filter by status
+        if ($request->query('status')) {
+            $query->where('status', $request->query('status'));
+        }
+
+        // Search by employee name
+        if ($request->query('search')) {
+            $search = $request->query('search');
+            $query->whereHas('employee.user', function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%");
+            });
+        }
+
+        $leaves = $query->paginate($perPage);
 
         return response()->json(['success' => true, 'data' => $leaves]);
     }
@@ -68,16 +84,8 @@ class LeaveController extends Controller
     }
 
     // Employee applies for leave
-    public function store(Request $request)
+    public function store(LeaveRequest $request)
     {
-        $request->validate([
-            'type' => 'required|in:sick,annual,unpaid',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'reason' => 'required|string',
-            'attachment' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:5120',
-        ]);
-
         $employee = Auth::user()->employee;
         if (!$employee) {
             return response()->json(['success' => false, 'message' => 'Anda belum terdaftar sebagai karyawan.'], 403);
@@ -115,45 +123,56 @@ class LeaveController extends Controller
             }
         }
 
-        $attachmentPath = null;
-        if ($request->hasFile('attachment')) {
-            $attachmentPath = $request->file('attachment')->store('leaves', 'public');
-        }
-
-        $leave = Leave::create([
-            'employee_id' => $employee->id,
-            'type' => $request->type,
-            'start_date' => $request->start_date,
-            'end_date' => $request->end_date,
-            'reason' => $request->reason,
-            'attachment' => $attachmentPath,
-        ]);
-
-        $status = 'pending_hr';
-        if ($employee->manager_id) {
-            $status = 'pending_manager';
-            // Approval Delegation: Jika manajer cuti hari ini, otomatis eskalasi ke HR
-            $isManagerOnLeave = \App\Models\Leave::where('employee_id', $employee->manager_id)
-                ->where('status', 'approved')
-                ->where('start_date', '<=', \Carbon\Carbon::today()->toDateString())
-                ->where('end_date', '>=', \Carbon\Carbon::today()->toDateString())
-                ->exists();
-                
-            if ($isManagerOnLeave) {
-                $status = 'pending_hr';
+        return DB::transaction(function () use ($request, $employee, $startDate, $endDate) {
+            $attachmentPath = null;
+            if ($request->hasFile('attachment')) {
+                $attachmentPath = $request->file('attachment')->store('leaves', 'public');
             }
-        }
-        $leave->status = $status;
-        $leave->save();
 
-        $this->notifyManagerOrHR(
-            $employee,
-            'Pengajuan Cuti Baru',
-            "{$employee->user->name} telah mengajukan cuti.",
-            '/leaves'
-        );
+            $leave = Leave::create([
+                'employee_id' => $employee->id,
+                'type' => $request->type,
+                'start_date' => $request->start_date,
+                'end_date' => $request->end_date,
+                'reason' => $request->reason,
+                'attachment' => $attachmentPath,
+            ]);
 
-        return response()->json(['success' => true, 'data' => $leave]);
+            $status = 'pending_hr';
+            if ($employee->manager_id) {
+                $status = 'pending_manager';
+                // Approval Delegation: Jika manajer cuti hari ini, otomatis eskalasi ke HR
+                $isManagerOnLeave = Leave::where('employee_id', $employee->manager_id)
+                    ->where('status', 'approved')
+                    ->where('start_date', '<=', Carbon::today()->toDateString())
+                    ->where('end_date', '>=', Carbon::today()->toDateString())
+                    ->exists();
+                    
+                if ($isManagerOnLeave) {
+                    $status = 'pending_hr';
+                }
+            }
+            $leave->status = $status;
+            $leave->save();
+
+            Log::info('[LEAVE] Employee #{id} submitted leave request', [
+                'id' => $employee->id,
+                'name' => $employee->user->name,
+                'type' => $request->type,
+                'start_date' => $request->start_date,
+                'end_date' => $request->end_date,
+                'status' => $status,
+            ]);
+
+            $this->notifyManagerOrHR(
+                $employee,
+                'Pengajuan Cuti Baru',
+                "{$employee->user->name} telah mengajukan cuti.",
+                '/leaves'
+            );
+
+            return response()->json(['success' => true, 'data' => $leave]);
+        });
     }
 
     // Manager / HR approves/rejects
@@ -185,47 +204,56 @@ class LeaveController extends Controller
             }
         }
 
-        $leave->update(['status' => $request->status]);
+        return DB::transaction(function () use ($request, $leave, $user) {
+            $leave->update(['status' => $request->status]);
 
-        if ($request->status === 'approved') {
-            $startDate = Carbon::parse($leave->start_date);
-            $endDate = Carbon::parse($leave->end_date);
-            $requestedDays = $startDate->diffInDaysFiltered(function (Carbon $date) {
-                return !$date->isWeekend();
-            }, $endDate) + 1;
+            if ($request->status === 'approved') {
+                $startDate = Carbon::parse($leave->start_date);
+                $endDate = Carbon::parse($leave->end_date);
+                $requestedDays = $startDate->diffInDaysFiltered(function (Carbon $date) {
+                    return !$date->isWeekend();
+                }, $endDate) + 1;
 
-            if ($leave->type === 'annual') {
-                $employee = $leave->employee;
-                if ($employee->leave_balance >= $requestedDays) {
-                    $employee->decrement('leave_balance', $requestedDays);
-                } else {
-                    return response()->json(['success' => false, 'message' => 'Kuota cuti tidak cukup untuk di-approve.'], 400);
+                if ($leave->type === 'annual') {
+                    $employee = $leave->employee;
+                    if ($employee->leave_balance >= $requestedDays) {
+                        $employee->decrement('leave_balance', $requestedDays);
+                    } else {
+                        throw new \Exception('Kuota cuti tidak cukup untuk di-approve.');
+                    }
+                }
+
+                $endDateForLoop = $endDate->copy()->addDay();
+                $interval = new \DateInterval('P1D');
+                $period = new \DatePeriod($startDate->toDateTime(), $interval, $endDateForLoop->toDateTime());
+
+                foreach ($period as $dt) {
+                    $currentDate = Carbon::instance($dt);
+                    if (!$currentDate->isWeekend()) {
+                        \App\Models\Attendance::updateOrCreate(
+                            ['employee_id' => $leave->employee_id, 'date' => $dt->format('Y-m-d')],
+                            ['status' => 'leave']
+                        );
+                    }
                 }
             }
 
-            $endDateForLoop = $endDate->copy()->addDay();
-            $interval = new \DateInterval('P1D');
-            $period = new \DatePeriod($startDate->toDateTime(), $interval, $endDateForLoop->toDateTime());
+            Log::info('[LEAVE] Leave #{leave_id} status updated to {status} by {user}', [
+                'leave_id' => $leave->id,
+                'status' => $request->status,
+                'user' => $user->name,
+                'employee' => $leave->employee->user->name ?? 'unknown',
+            ]);
 
-            foreach ($period as $dt) {
-                $currentDate = Carbon::instance($dt);
-                if (!$currentDate->isWeekend()) {
-                    \App\Models\Attendance::updateOrCreate(
-                        ['employee_id' => $leave->employee_id, 'date' => $dt->format('Y-m-d')],
-                        ['status' => 'leave']
-                    );
-                }
+            if ($request->status === 'approved') {
+                $this->notifyEmployee($leave->employee, 'Cuti Disetujui', 'Pengajuan cuti Anda telah disetujui.', '/leaves', 'success');
+            } elseif ($request->status === 'rejected') {
+                $this->notifyEmployee($leave->employee, 'Cuti Ditolak', 'Pengajuan cuti Anda ditolak.', '/leaves', 'error');
+            } elseif ($request->status === 'pending_hr') {
+                $this->notifyHR('Persetujuan Lanjutan Cuti', "Pengajuan cuti oleh {$leave->employee->user->name} disetujui oleh manajer dan menunggu persetujuan Anda.", '/leaves');
             }
-        }
 
-        if ($request->status === 'approved') {
-            $this->notifyEmployee($leave->employee, 'Cuti Disetujui', 'Pengajuan cuti Anda telah disetujui.', '/leaves', 'success');
-        } elseif ($request->status === 'rejected') {
-            $this->notifyEmployee($leave->employee, 'Cuti Ditolak', 'Pengajuan cuti Anda ditolak.', '/leaves', 'error');
-        } elseif ($request->status === 'pending_hr') {
-            $this->notifyHR('Persetujuan Lanjutan Cuti', "Pengajuan cuti oleh {$leave->employee->user->name} disetujui oleh manajer dan menunggu persetujuan Anda.", '/leaves');
-        }
-
-        return response()->json(['success' => true, 'data' => $leave]);
+            return response()->json(['success' => true, 'data' => $leave]);
+        });
     }
 }

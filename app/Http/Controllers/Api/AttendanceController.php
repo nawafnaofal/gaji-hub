@@ -9,6 +9,7 @@ use App\Models\Employee;
 use App\Models\Attendance;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 
@@ -53,8 +54,8 @@ class AttendanceController extends Controller
     public function clockIn(Request $request)
     {
         $request->validate([
-            'latitude' => 'required|numeric',
-            'longitude' => 'required|numeric',
+            'latitude' => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
             'photo' => 'required|string'
         ]);
 
@@ -76,8 +77,14 @@ class AttendanceController extends Controller
             $imageParts = explode(";base64,", $request->photo);
             if (count($imageParts) == 2) {
                 $imageTypeAux = explode("image/", $imageParts[0]);
-                $imageType = $imageTypeAux[1];
+                $imageType = $imageTypeAux[1] ?? 'png';
                 $imageBase64 = base64_decode($imageParts[1]);
+                
+                // Validate base64 is valid image data
+                if ($imageBase64 === false || strlen($imageBase64) > 10 * 1024 * 1024) {
+                    return response()->json(['success' => false, 'message' => 'Foto tidak valid atau terlalu besar (max 10MB).'], 400);
+                }
+                
                 $fileName = 'attendance/' . Str::uuid() . '.' . $imageType;
                 Storage::disk('public')->put($fileName, $imageBase64);
                 $photoPath = $fileName;
@@ -144,14 +151,23 @@ class AttendanceController extends Controller
             ]
         );
 
+        Log::info('[ATTENDANCE] Clock-in by employee #{id}', [
+            'id' => $employee->id,
+            'name' => $employee->user->name,
+            'time' => $currentTime,
+            'status' => $status,
+            'lat' => $request->latitude,
+            'lng' => $request->longitude,
+        ]);
+
         return response()->json(['success' => true, 'message' => 'Berhasil Clock In.', 'data' => $attendance]);
     }
 
     public function clockOut(Request $request)
     {
         $request->validate([
-            'latitude' => 'required|numeric',
-            'longitude' => 'required|numeric',
+            'latitude' => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
             'photo' => 'nullable|string'
         ]);
 
@@ -203,17 +219,31 @@ class AttendanceController extends Controller
                 $image = str_replace('data:image/jpeg;base64,', '', $image);
                 $image = str_replace('data:image/png;base64,', '', $image);
                 $image = str_replace(' ', '+', $image);
-                $imageName = 'attendance_out_' . $employee->id . '_' . time() . '.png';
-                Storage::disk('public')->put('attendances/' . $imageName, base64_decode($image));
-                $photoPath = 'attendances/' . $imageName;
+                $decoded = base64_decode($image);
+                
+                if ($decoded !== false && strlen($decoded) <= 10 * 1024 * 1024) {
+                    $imageName = 'attendance_out_' . $employee->id . '_' . time() . '.png';
+                    Storage::disk('public')->put('attendances/' . $imageName, $decoded);
+                    $photoPath = 'attendances/' . $imageName;
+                }
             } catch (\Exception $e) {
                 // Ignore failure to ensure clock out completes
+                Log::warning('[ATTENDANCE] Failed to save clock-out photo for employee #{id}', [
+                    'id' => $employee->id,
+                    'error' => $e->getMessage(),
+                ]);
             }
         }
 
         $attendance->update([
             'clock_out' => $currentTime,
             'photo_path' => $photoPath ?? $attendance->photo_path
+        ]);
+
+        Log::info('[ATTENDANCE] Clock-out by employee #{id}', [
+            'id' => $employee->id,
+            'name' => $employee->user->name,
+            'time' => $currentTime,
         ]);
 
         return response()->json(['success' => true, 'message' => 'Berhasil Clock Out.', 'data' => $attendance]);
