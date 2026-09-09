@@ -24,7 +24,8 @@ class DashboardController extends Controller
             $pendingLeaves = \App\Models\Leave::where('employee_id', $employee->id)->whereIn('status', ['pending_manager', 'pending_hr'])->count();
             $approvedLeaves = \App\Models\Leave::where('employee_id', $employee->id)->where('status', 'approved')->count();
             
-            $todayAttendance = \App\Models\Attendance::where('employee_id', $employee->id)->where('date', \Carbon\Carbon::today()->format('Y-m-d'))->first();
+            $today = \Carbon\Carbon::today()->format('Y-m-d');
+            $todayAttendance = \App\Models\Attendance::where('employee_id', $employee->id)->where('date', $today)->first();
             $hasClockedIn = $todayAttendance && $todayAttendance->clock_in ? true : false;
             $hasClockedOut = $todayAttendance && $todayAttendance->clock_out ? true : false;
             
@@ -45,6 +46,9 @@ class DashboardController extends Controller
             $officeLat = $settings['office_latitude'] ?? -6.151595380868531;
             $officeLng = $settings['office_longitude'] ?? 106.77652147472021;
             $officeRadius = $settings['office_radius'] ?? 50;
+            $companyName = $settings['company_name'] ?? 'Kantor Pusat';
+
+            $teamPulse = $this->getTeamPulseData($today);
                 
             return response()->json([
                 'success' => true,
@@ -56,12 +60,15 @@ class DashboardController extends Controller
                     'approved_leaves' => $approvedLeaves,
                     'has_clocked_in' => $hasClockedIn,
                     'has_clocked_out' => $hasClockedOut,
+                    'today_attendance' => $todayAttendance,
                     'announcements' => $announcements,
                     'geofencing' => [
                         'latitude' => (float) $officeLat,
                         'longitude' => (float) $officeLng,
-                        'radius' => (int) $officeRadius
-                    ]
+                        'radius' => (int) $officeRadius,
+                        'company_name' => $companyName,
+                    ],
+                    'team_pulse' => $teamPulse,
                 ]
             ]);
         }
@@ -129,6 +136,22 @@ class DashboardController extends Controller
                 ];
             });
 
+            $settings = cache()->remember('company_settings_mapped', 86400, function () {
+                $all = \App\Models\CompanySetting::all();
+                $mappedData = [];
+                foreach ($all as $setting) {
+                    $mappedData[$setting->key] = $setting->value;
+                }
+                return $mappedData;
+            });
+
+            $officeLat = $settings['office_latitude'] ?? -6.151595380868531;
+            $officeLng = $settings['office_longitude'] ?? 106.77652147472021;
+            $officeRadius = $settings['office_radius'] ?? 50;
+            $companyName = $settings['company_name'] ?? 'Kantor Pusat';
+
+            $teamPulse = $this->getTeamPulseData($today);
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -142,6 +165,13 @@ class DashboardController extends Controller
                 'department_dist' => $departmentDist,
                 'top_kpi' => $topKPI,
                 'announcements' => $announcements,
+                'geofencing' => [
+                    'latitude' => (float) $officeLat,
+                    'longitude' => (float) $officeLng,
+                    'radius' => (int) $officeRadius,
+                    'company_name' => $companyName,
+                ],
+                'team_pulse' => $teamPulse,
             ]
         ]);
     }
@@ -255,5 +285,94 @@ class DashboardController extends Controller
             'success' => true,
             'data' => $approvals
         ]);
+    }
+
+    protected function getTeamPulseData($today): array
+    {
+        // 1. Who's on leave today
+        $leavesToday = \App\Models\Leave::with('employee.user')
+            ->where('status', 'approved')
+            ->where('start_date', '<=', $today)
+            ->where('end_date', '>=', $today)
+            ->get()
+            ->map(function ($l) {
+                return [
+                    'id' => $l->id,
+                    'name' => $l->employee->user->name ?? 'Karyawan',
+                    'department' => $l->employee->department_id ?? '-',
+                    'avatar' => $l->employee->profile_photo ? asset('storage/' . $l->employee->profile_photo) : null,
+                    'type' => $l->type ?? 'annual',
+                    'status_label' => $l->type === 'sick' ? 'Izin Sakit' : ($l->type === 'annual' ? 'Cuti Tahunan' : 'Izin'),
+                ];
+            });
+
+        // 2. Who's working from home today
+        $wfhToday = \App\Models\Attendance::with('employee.user')
+            ->where('date', $today)
+            ->where('work_mode', 'wfh')
+            ->get()
+            ->map(function ($att) {
+                return [
+                    'id' => $att->id,
+                    'name' => $att->employee->user->name ?? 'Karyawan',
+                    'department' => $att->employee->department_id ?? '-',
+                    'avatar' => $att->employee->profile_photo ? asset('storage/' . $att->employee->profile_photo) : null,
+                    'clock_in' => $att->clock_in ? substr($att->clock_in, 0, 5) : '-',
+                    'status_label' => 'WFH',
+                ];
+            });
+
+        // 3. Birthdays in next 14 days
+        $now = \Carbon\Carbon::now();
+        $upcomingBirthdays = \App\Models\Employee::with('user')
+            ->whereNotNull('birth_date')
+            ->get()
+            ->filter(function ($emp) use ($now) {
+                if (!$emp->birth_date) return false;
+                try {
+                    $bday = \Carbon\Carbon::parse($emp->birth_date)->year($now->year);
+                    if ($bday->isPast() && $bday->diffInDays($now) > 1) {
+                        $bday->addYear();
+                    }
+                    $diff = (int) $now->diffInDays($bday, false);
+                    return $diff >= 0 && $diff <= 14;
+                } catch (\Exception $e) {
+                    return false;
+                }
+            })
+            ->map(function ($emp) use ($now) {
+                $bday = \Carbon\Carbon::parse($emp->birth_date)->year($now->year);
+                return [
+                    'id' => $emp->id,
+                    'name' => $emp->user->name ?? 'Karyawan',
+                    'department' => $emp->department_id ?? '-',
+                    'avatar' => $emp->profile_photo ? asset('storage/' . $emp->profile_photo) : null,
+                    'date' => \Carbon\Carbon::parse($emp->birth_date)->format('d M'),
+                    'days_left' => (int) $now->diffInDays($bday, false),
+                ];
+            })
+            ->sortBy('days_left')
+            ->values();
+
+        // 4. Upcoming holidays
+        $upcomingHolidays = \App\Models\Holiday::where('date', '>=', $today)
+            ->orderBy('date', 'asc')
+            ->limit(3)
+            ->get()
+            ->map(function ($h) {
+                return [
+                    'id' => $h->id,
+                    'name' => $h->name,
+                    'date' => \Carbon\Carbon::parse($h->date)->format('d M Y'),
+                    'raw_date' => $h->date,
+                ];
+            });
+
+        return [
+            'leaves_today' => $leavesToday,
+            'wfh_today' => $wfhToday,
+            'upcoming_birthdays' => $upcomingBirthdays,
+            'upcoming_holidays' => $upcomingHolidays,
+        ];
     }
 }

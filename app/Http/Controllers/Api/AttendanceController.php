@@ -91,8 +91,11 @@ class AttendanceController extends Controller
             }
         }
 
-        // Geofencing Check
-        if ($request->latitude && $request->longitude) {
+        $workMode = $request->input('work_mode', 'wfo');
+        $notes = $request->input('notes');
+
+        // Geofencing Check (enforce only for WFO mode)
+        if ($workMode === 'wfo' && $request->latitude && $request->longitude) {
             $settings = cache()->remember('company_settings_mapped', 86400, function () {
                 $all = \App\Models\CompanySetting::all();
                 $mappedData = [];
@@ -145,6 +148,8 @@ class AttendanceController extends Controller
             [
                 'clock_in' => $currentTime, 
                 'status' => $status,
+                'work_mode' => $workMode,
+                'notes' => $notes,
                 'latitude' => $request->latitude,
                 'longitude' => $request->longitude,
                 'photo_path' => $photoPath

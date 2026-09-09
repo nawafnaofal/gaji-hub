@@ -12,6 +12,8 @@ class Attendance extends Model
         'clock_in',
         'clock_out',
         'status',
+        'work_mode',
+        'notes',
         'latitude',
         'longitude',
         'photo_path',
