@@ -14,6 +14,7 @@ class Employee extends Model
     protected $fillable = [
         'user_id',
         'department_id',
+        'branch_id',
         'employee_code',
         'basic_salary',
         'join_date',
@@ -88,6 +89,11 @@ class Employee extends Model
     public function subordinates()
     {
         return $this->hasMany(Employee::class, 'manager_id');
+    }
+
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     public function getActivitylogOptions(): LogOptions

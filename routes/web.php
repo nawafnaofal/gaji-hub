@@ -138,6 +138,10 @@ Route::get('/thrs', function () {
     return Inertia::render('Thr/Index');
 })->middleware(['auth', 'verified'])->name('thrs');
 
+Route::get('/branches', function () {
+    return Inertia::render('Branch/Index');
+})->middleware(['auth', 'verified', 'role:admin,hr'])->name('branches');
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -251,10 +255,18 @@ Route::middleware('auth')->prefix('api/v1')->group(function () {
         Route::put('/thrs/{id}/disburse', [\App\Http\Controllers\Api\ThrController::class, 'disburse']);
         Route::post('/thrs/bulk-disburse', [\App\Http\Controllers\Api\ThrController::class, 'bulkDisburse']);
         Route::get('/thrs/export/bank', [\App\Http\Controllers\Api\ThrController::class, 'exportBankTransfer']);
+
+        // Branches (Kantor Cabang) - Admin & HR
+        Route::post('/branches', [\App\Http\Controllers\Api\BranchController::class, 'store']);
+        Route::get('/branches/{branch}', [\App\Http\Controllers\Api\BranchController::class, 'show']);
+        Route::put('/branches/{branch}', [\App\Http\Controllers\Api\BranchController::class, 'update']);
+        Route::delete('/branches/{branch}', [\App\Http\Controllers\Api\BranchController::class, 'destroy']);
+        Route::post('/branches/{branch}/assign', [\App\Http\Controllers\Api\BranchController::class, 'assignEmployees']);
     });
     
     // Shared API
     Route::middleware('auth')->group(function () {
+        Route::get('/branches', [\App\Http\Controllers\Api\BranchController::class, 'index']);
         Route::get('/thrs', [\App\Http\Controllers\Api\ThrController::class, 'index']);
         Route::get('/thrs/{id}/slip-pdf', [\App\Http\Controllers\Api\ThrController::class, 'downloadSlipPdf']);
         Route::get('/employees', [\App\Http\Controllers\Api\EmployeeController::class, 'index']);

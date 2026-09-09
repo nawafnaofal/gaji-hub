@@ -17,7 +17,7 @@ class EmployeeController extends Controller
     public function index()
     {
         $now = \Carbon\Carbon::now();
-        $employees = Employee::with('user')->get()->map(function($emp) use ($now) {
+        $employees = Employee::with(['user', 'branch'])->get()->map(function($emp) use ($now) {
             $joinDate = $emp->join_date ? \Carbon\Carbon::parse($emp->join_date) : null;
             $contractEndDate = null;
             $daysRemaining = null;
@@ -72,6 +72,7 @@ class EmployeeController extends Controller
             $employee = Employee::create([
                 'user_id' => $user->id,
                 'department_id' => $request->department_id,
+                'branch_id' => $request->branch_id,
                 'employee_code' => $request->employee_code,
                 'basic_salary' => $request->basic_salary,
                 'join_date' => $request->join_date,
@@ -129,6 +130,7 @@ class EmployeeController extends Controller
 
             $employee->update([
                 'department_id' => $request->department_id,
+                'branch_id' => $request->branch_id,
                 'employee_code' => $request->employee_code,
                 'basic_salary' => $request->basic_salary,
                 'join_date' => $request->join_date,

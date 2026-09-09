@@ -43,10 +43,22 @@ class DashboardController extends Controller
                 return $mappedData;
             });
 
-            $officeLat = $settings['office_latitude'] ?? -6.151595380868531;
-            $officeLng = $settings['office_longitude'] ?? 106.77652147472021;
-            $officeRadius = $settings['office_radius'] ?? 50;
-            $companyName = $settings['company_name'] ?? 'Kantor Pusat';
+            $branch = $employee->branch;
+            if (!$branch || !$branch->is_active) {
+                $branch = \App\Models\Branch::where('is_head_office', true)->where('is_active', true)->first();
+            }
+
+            if ($branch) {
+                $officeLat = (float) $branch->latitude;
+                $officeLng = (float) $branch->longitude;
+                $officeRadius = (int) $branch->radius_meters;
+                $companyName = $branch->name;
+            } else {
+                $officeLat = (float) ($settings['office_latitude'] ?? -6.151595380868531);
+                $officeLng = (float) ($settings['office_longitude'] ?? 106.77652147472021);
+                $officeRadius = (int) ($settings['office_radius'] ?? 50);
+                $companyName = $settings['company_name'] ?? 'Kantor Pusat';
+            }
 
             $teamPulse = $this->getTeamPulseData($today);
                 
@@ -145,10 +157,18 @@ class DashboardController extends Controller
                 return $mappedData;
             });
 
-            $officeLat = $settings['office_latitude'] ?? -6.151595380868531;
-            $officeLng = $settings['office_longitude'] ?? 106.77652147472021;
-            $officeRadius = $settings['office_radius'] ?? 50;
-            $companyName = $settings['company_name'] ?? 'Kantor Pusat';
+            $headBranch = \App\Models\Branch::where('is_head_office', true)->where('is_active', true)->first();
+            if ($headBranch) {
+                $officeLat = (float) $headBranch->latitude;
+                $officeLng = (float) $headBranch->longitude;
+                $officeRadius = (int) $headBranch->radius_meters;
+                $companyName = $headBranch->name;
+            } else {
+                $officeLat = (float) ($settings['office_latitude'] ?? -6.151595380868531);
+                $officeLng = (float) ($settings['office_longitude'] ?? 106.77652147472021);
+                $officeRadius = (int) ($settings['office_radius'] ?? 50);
+                $companyName = $settings['company_name'] ?? 'Kantor Pusat';
+            }
 
             $teamPulse = $this->getTeamPulseData($today);
 

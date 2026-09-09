@@ -6,7 +6,7 @@ import {
     Sun, Moon, Bell, Menu, X, 
     LayoutDashboard, Megaphone, Users, CalendarCheck, 
     WalletCards, Receipt, Settings as SettingsIcon, Calendar, 
-    Coffee, Clock, Banknote, LogOut, User, Activity, FileCheck, Laptop, Star, Network, BarChart3, AlarmClock, Target, Briefcase, UserMinus, CalendarClock, ShieldAlert, Calculator, Gift
+    Coffee, Clock, Banknote, LogOut, User, Activity, FileCheck, Laptop, Star, Network, BarChart3, AlarmClock, Target, Briefcase, UserMinus, CalendarClock, ShieldAlert, Calculator, Gift, Building2
 } from 'lucide-react';
 import { useTheme } from '@/Components/ThemeProvider';
 import axios from 'axios';
@@ -129,6 +129,9 @@ export default function AuthenticatedLayout({ header, children }) {
                             <SidebarGroup title="Core HR (Kepegawaian)" />
                             <SidebarLink href={route('employees')} active={route().current('employees')} icon={Users}>
                                 Data Karyawan
+                            </SidebarLink>
+                            <SidebarLink href={route('branches')} active={route().current('branches')} icon={Building2}>
+                                Cabang &amp; Lokasi
                             </SidebarLink>
                             <SidebarLink href={route('warning-letters')} active={route().current('warning-letters')} icon={ShieldAlert}>
                                 Surat Peringatan (SP)

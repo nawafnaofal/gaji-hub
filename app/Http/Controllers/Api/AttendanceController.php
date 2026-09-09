@@ -96,18 +96,31 @@ class AttendanceController extends Controller
 
         // Geofencing Check (enforce only for WFO mode)
         if ($workMode === 'wfo' && $request->latitude && $request->longitude) {
-            $settings = cache()->remember('company_settings_mapped', 86400, function () {
-                $all = \App\Models\CompanySetting::all();
-                $mappedData = [];
-                foreach ($all as $setting) {
-                    $mappedData[$setting->key] = $setting->value;
-                }
-                return $mappedData;
-            });
+            $branch = $employee->branch;
+            if (!$branch || !$branch->is_active) {
+                $branch = \App\Models\Branch::where('is_head_office', true)->where('is_active', true)->first();
+            }
 
-            $officeLat = $settings['office_latitude'] ?? -6.151595380868531;
-            $officeLng = $settings['office_longitude'] ?? 106.77652147472021;
-            $radius = $settings['office_radius'] ?? 50;
+            if ($branch) {
+                $officeLat = (float) $branch->latitude;
+                $officeLng = (float) $branch->longitude;
+                $radius = (int) $branch->radius_meters;
+                $branchName = $branch->name;
+            } else {
+                $settings = cache()->remember('company_settings_mapped', 86400, function () {
+                    $all = \App\Models\CompanySetting::all();
+                    $mappedData = [];
+                    foreach ($all as $setting) {
+                        $mappedData[$setting->key] = $setting->value;
+                    }
+                    return $mappedData;
+                });
+
+                $officeLat = (float) ($settings['office_latitude'] ?? -6.151595380868531);
+                $officeLng = (float) ($settings['office_longitude'] ?? 106.77652147472021);
+                $radius = (int) ($settings['office_radius'] ?? 50);
+                $branchName = 'Kantor Pusat';
+            }
 
             $earthRadius = 6371000; // meters
             $latFrom = deg2rad((float)$request->latitude);
@@ -122,7 +135,10 @@ class AttendanceController extends Controller
             $distance = $angle * $earthRadius;
 
             if ($distance > $radius) {
-                return response()->json(['success' => false, 'message' => 'Anda berada di luar radius kantor (' . round($distance) . ' meter). Radius maksimal: ' . $radius . ' meter.'], 400);
+                return response()->json([
+                    'success' => false,
+                    'message' => "Anda berada di luar radius {$branchName} (" . round($distance) . " meter). Radius maksimal: {$radius} meter."
+                ], 400);
             }
         }
 
