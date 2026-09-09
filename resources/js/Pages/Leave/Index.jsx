@@ -4,9 +4,11 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
 import { FileText, CheckCircle, XCircle, Eye, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Pagination from '@/Components/Pagination';
 
 export default function LeaveIndex({ auth }) {
     const [leaves, setLeaves] = useState([]);
+    const [pagination, setPagination] = useState(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [previewUrl, setPreviewUrl] = useState(null);
@@ -26,7 +28,7 @@ export default function LeaveIndex({ auth }) {
     const isEmployee = auth.user.role === 'employee';
 
     useEffect(() => {
-        fetchLeaves();
+        fetchLeaves(1);
     }, []);
 
     const fetchCalendarData = async () => {
@@ -46,13 +48,17 @@ export default function LeaveIndex({ auth }) {
         }
     }, [viewMode, calMonth, calYear]);
 
-    const fetchLeaves = async () => {
+    const fetchLeaves = async (page = 1) => {
         setLoading(true);
         try {
-            const response = await axios.get('/api/v1/leaves');
-            setLeaves(response.data.data);
+            const response = await axios.get('/api/v1/leaves', { params: { page } });
+            const raw = response.data.data;
+            const items = Array.isArray(raw) ? raw : (raw?.data || []);
+            setLeaves(items);
+            setPagination(response.data.pagination || (Array.isArray(raw) ? null : raw));
         } catch (error) {
             console.error("Error fetching leaves", error);
+            setLeaves([]);
         } finally {
             setLoading(false);
         }
@@ -297,7 +303,8 @@ export default function LeaveIndex({ auth }) {
                                 </div>
                             </div>
                         ) : (
-                        <div className="overflow-x-auto">
+                            <>
+                                <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
                                     <tr className="bg-gray-100 dark:bg-gray-700/50 border-b dark:border-gray-700">
@@ -314,13 +321,13 @@ export default function LeaveIndex({ auth }) {
                                 </thead>
                                 <tbody>
                                     {loading ? (
-                                        <tr><td colSpan="6" className="p-4 text-center dark:text-gray-400">Memuat data...</td></tr>
-                                    ) : leaves.length === 0 ? (
-                                        <tr><td colSpan="6" className="p-4 text-center dark:text-gray-400">Belum ada pengajuan cuti.</td></tr>
+                                        <tr><td colSpan="7" className="p-4 text-center dark:text-gray-400">Memuat data...</td></tr>
+                                    ) : !Array.isArray(leaves) || leaves.length === 0 ? (
+                                        <tr><td colSpan="7" className="p-4 text-center dark:text-gray-400">Belum ada pengajuan cuti.</td></tr>
                                     ) : (
                                         leaves.map(leave => (
                                             <tr key={leave.id} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                                {(!isEmployee || leaves.some(l => l.employee?.user_id !== auth.user.id)) && (
+                                                {(!isEmployee || (Array.isArray(leaves) && leaves.some(l => l.employee?.user_id !== auth.user.id))) && (
                                                     <td className="p-4">
                                                         <div className="font-medium text-gray-800 dark:text-gray-200">{leave.employee?.user?.name}</div>
                                                         <div className="text-xs text-gray-500 dark:text-gray-400">{leave.employee?.employee_code}</div>
@@ -366,7 +373,9 @@ export default function LeaveIndex({ auth }) {
                                     )}
                                 </tbody>
                             </table>
-                        </div>
+                                </div>
+                                <Pagination meta={pagination} onPageChange={fetchLeaves} />
+                            </>
                         )}
                     </div>
                 </div>

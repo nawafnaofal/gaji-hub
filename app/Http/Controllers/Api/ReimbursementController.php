@@ -42,7 +42,18 @@ class ReimbursementController extends Controller
 
         $claims = $query->paginate($perPage);
 
-        return response()->json(['success' => true, 'data' => $claims]);
+        return response()->json([
+            'success' => true,
+            'data' => $claims->items(),
+            'pagination' => [
+                'current_page' => $claims->currentPage(),
+                'last_page' => $claims->lastPage(),
+                'per_page' => $claims->perPage(),
+                'total' => $claims->total(),
+                'from' => $claims->firstItem(),
+                'to' => $claims->lastItem(),
+            ]
+        ]);
     }
 
     // Employee applies for reimbursement

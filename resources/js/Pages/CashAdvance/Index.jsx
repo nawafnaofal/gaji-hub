@@ -4,9 +4,11 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
 import { PlusCircle, Banknote, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Pagination from '@/Components/Pagination';
 
 export default function CashAdvanceIndex({ auth }) {
     const [cashAdvances, setCashAdvances] = useState([]);
+    const [pagination, setPagination] = useState(null);
     const [employees, setEmployees] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -23,19 +25,23 @@ export default function CashAdvanceIndex({ auth }) {
     });
 
     useEffect(() => {
-        fetchCashAdvances();
+        fetchCashAdvances(1);
         if (!isEmployee) {
             fetchEmployees();
         }
     }, []);
 
-    const fetchCashAdvances = async () => {
+    const fetchCashAdvances = async (page = 1) => {
         setLoading(true);
         try {
-            const res = await axios.get('/api/v1/cash-advances');
-            setCashAdvances(res.data.data);
+            const res = await axios.get('/api/v1/cash-advances', { params: { page } });
+            const raw = res.data.data;
+            const items = Array.isArray(raw) ? raw : (raw?.data || []);
+            setCashAdvances(items);
+            setPagination(res.data.pagination || (Array.isArray(raw) ? null : raw));
         } catch (error) {
             console.error(error);
+            setCashAdvances([]);
         } finally {
             setLoading(false);
         }
@@ -151,7 +157,7 @@ export default function CashAdvanceIndex({ auth }) {
                                     <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                                         {loading ? (
                                             <tr><td colSpan={!isEmployee ? "6" : "4"} className="p-8 text-center text-gray-500">Memuat data...</td></tr>
-                                        ) : cashAdvances.length === 0 ? (
+                                        ) : !Array.isArray(cashAdvances) || cashAdvances.length === 0 ? (
                                             <tr><td colSpan={!isEmployee ? "6" : "4"} className="p-8 text-center text-gray-500">Belum ada data kasbon.</td></tr>
                                         ) : (
                                             cashAdvances.map(item => (
@@ -199,7 +205,7 @@ export default function CashAdvanceIndex({ auth }) {
                                     </tbody>
                                 </table>
                             </div>
-
+                            <Pagination meta={pagination} onPageChange={fetchCashAdvances} />
                         </div>
                     </div>
                 </div>

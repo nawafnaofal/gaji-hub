@@ -12,12 +12,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        $enumStr = "ENUM('pending', 'pending_manager', 'pending_hr', 'approved', 'rejected', 'paid')";
-        
-        DB::statement("ALTER TABLE leaves MODIFY COLUMN status $enumStr DEFAULT 'pending_manager'");
-        DB::statement("ALTER TABLE overtimes MODIFY COLUMN status $enumStr DEFAULT 'pending_manager'");
-        DB::statement("ALTER TABLE reimbursements MODIFY COLUMN status $enumStr DEFAULT 'pending_manager'");
-        DB::statement("ALTER TABLE cash_advances MODIFY COLUMN status $enumStr DEFAULT 'pending_manager'");
+        if (DB::getDriverName() === 'mysql') {
+            $enumStr = "ENUM('pending', 'pending_manager', 'pending_hr', 'approved', 'rejected', 'paid')";
+            
+            DB::statement("ALTER TABLE leaves MODIFY COLUMN status $enumStr DEFAULT 'pending_manager'");
+            DB::statement("ALTER TABLE overtimes MODIFY COLUMN status $enumStr DEFAULT 'pending_manager'");
+            DB::statement("ALTER TABLE reimbursements MODIFY COLUMN status $enumStr DEFAULT 'pending_manager'");
+            DB::statement("ALTER TABLE cash_advances MODIFY COLUMN status $enumStr DEFAULT 'pending_manager'");
+        }
     }
 
     /**

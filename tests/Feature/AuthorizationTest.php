@@ -16,7 +16,7 @@ class AuthorizationTest extends TestCase
         parent::setUp();
         
         // Seed roles if using Spatie permissions
-        $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\RoleSeeder']);
+        $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\RolesAndPermissionsSeeder']);
     }
 
     /** @test */

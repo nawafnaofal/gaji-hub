@@ -17,7 +17,7 @@ return new class extends Migration
             $table->date('date');
             $table->string('description');
             $table->decimal('amount', 15, 2);
-            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
+            $table->string('status')->default('pending_manager');
             $table->timestamps();
         });
     }

@@ -40,7 +40,18 @@ class OvertimeController extends Controller
 
         $overtimes = $query->paginate($perPage);
 
-        return response()->json(['success' => true, 'data' => $overtimes]);
+        return response()->json([
+            'success' => true,
+            'data' => $overtimes->items(),
+            'pagination' => [
+                'current_page' => $overtimes->currentPage(),
+                'last_page' => $overtimes->lastPage(),
+                'per_page' => $overtimes->perPage(),
+                'total' => $overtimes->total(),
+                'from' => $overtimes->firstItem(),
+                'to' => $overtimes->lastItem(),
+            ]
+        ]);
     }
 
     public function store(OvertimeRequest $request)

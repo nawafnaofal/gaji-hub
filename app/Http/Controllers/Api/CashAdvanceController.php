@@ -39,7 +39,18 @@ class CashAdvanceController extends Controller
 
         $cashAdvances = $query->paginate($perPage);
         
-        return response()->json(['success' => true, 'data' => $cashAdvances]);
+        return response()->json([
+            'success' => true,
+            'data' => $cashAdvances->items(),
+            'pagination' => [
+                'current_page' => $cashAdvances->currentPage(),
+                'last_page' => $cashAdvances->lastPage(),
+                'per_page' => $cashAdvances->perPage(),
+                'total' => $cashAdvances->total(),
+                'from' => $cashAdvances->firstItem(),
+                'to' => $cashAdvances->lastItem(),
+            ]
+        ]);
     }
 
     public function store(CashAdvanceRequest $request)

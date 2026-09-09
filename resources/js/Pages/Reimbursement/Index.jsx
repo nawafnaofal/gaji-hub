@@ -4,9 +4,11 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
 import { DollarSign, CheckCircle, XCircle, FileText, Eye, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Pagination from '@/Components/Pagination';
 
 export default function ReimbursementIndex({ auth }) {
     const [claims, setClaims] = useState([]);
+    const [pagination, setPagination] = useState(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [previewUrl, setPreviewUrl] = useState(null);
@@ -21,16 +23,20 @@ export default function ReimbursementIndex({ auth }) {
     const isEmployee = auth.user.role === 'employee';
 
     useEffect(() => {
-        fetchClaims();
+        fetchClaims(1);
     }, []);
 
-    const fetchClaims = async () => {
+    const fetchClaims = async (page = 1) => {
         setLoading(true);
         try {
-            const response = await axios.get('/api/v1/reimbursements');
-            setClaims(response.data.data);
+            const response = await axios.get('/api/v1/reimbursements', { params: { page } });
+            const raw = response.data.data;
+            const items = Array.isArray(raw) ? raw : (raw?.data || []);
+            setClaims(items);
+            setPagination(response.data.pagination || (Array.isArray(raw) ? null : raw));
         } catch (error) {
             console.error("Error fetching reimbursements", error);
+            setClaims([]);
         } finally {
             setLoading(false);
         }
@@ -143,7 +149,7 @@ export default function ReimbursementIndex({ auth }) {
                             <table className="w-full text-left border-collapse">
                                 <thead>
                                     <tr className="bg-gray-100 dark:bg-gray-700/50 border-b dark:border-gray-700">
-                                        {!isEmployee || claims.some(c => c.employee?.user_id !== auth.user.id) ? (
+                                        {!isEmployee || (Array.isArray(claims) && claims.some(c => c.employee?.user_id !== auth.user.id)) ? (
                                             <th className="p-4 font-semibold text-gray-700 dark:text-gray-300">Karyawan</th>
                                         ) : null}
                                         <th className="p-4 font-semibold text-gray-700 dark:text-gray-300">Tanggal</th>
@@ -156,13 +162,13 @@ export default function ReimbursementIndex({ auth }) {
                                 </thead>
                                 <tbody>
                                     {loading ? (
-                                        <tr><td colSpan="6" className="p-4 text-center dark:text-gray-400">Memuat data...</td></tr>
-                                    ) : claims.length === 0 ? (
-                                        <tr><td colSpan="6" className="p-4 text-center dark:text-gray-400">Belum ada pengajuan klaim.</td></tr>
+                                        <tr><td colSpan="7" className="p-4 text-center dark:text-gray-400">Memuat data...</td></tr>
+                                    ) : !Array.isArray(claims) || claims.length === 0 ? (
+                                        <tr><td colSpan="7" className="p-4 text-center dark:text-gray-400">Belum ada pengajuan klaim.</td></tr>
                                     ) : (
                                         claims.map(claim => (
                                             <tr key={claim.id} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                                {(!isEmployee || claims.some(c => c.employee?.user_id !== auth.user.id)) && (
+                                                {(!isEmployee || (Array.isArray(claims) && claims.some(c => c.employee?.user_id !== auth.user.id))) && (
                                                     <td className="p-4">
                                                         <div className="font-medium text-gray-800 dark:text-gray-200">{claim.employee?.user?.name}</div>
                                                         <div className="text-xs text-gray-500 dark:text-gray-400">{claim.employee?.employee_code}</div>
@@ -209,6 +215,7 @@ export default function ReimbursementIndex({ auth }) {
                                 </tbody>
                             </table>
                         </div>
+                        <Pagination meta={pagination} onPageChange={fetchClaims} />
                     </div>
                 </div>
             </div>

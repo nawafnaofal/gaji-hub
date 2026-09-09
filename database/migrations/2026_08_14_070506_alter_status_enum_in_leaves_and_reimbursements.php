@@ -12,9 +12,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // For MySQL, change enum to string or modify enum. We'll change to string for flexibility.
-        DB::statement("ALTER TABLE leaves MODIFY COLUMN status VARCHAR(255) DEFAULT 'pending'");
-        DB::statement("ALTER TABLE reimbursements MODIFY COLUMN status VARCHAR(255) DEFAULT 'pending'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE leaves MODIFY COLUMN status VARCHAR(255) DEFAULT 'pending'");
+            DB::statement("ALTER TABLE reimbursements MODIFY COLUMN status VARCHAR(255) DEFAULT 'pending'");
+        }
     }
 
     /**

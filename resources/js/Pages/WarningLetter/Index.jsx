@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
-import { AlertTriangle, PlusCircle, Download, FileText, CheckCircle2, XCircle, Clock, ShieldAlert } from 'lucide-react';
+import { AlertTriangle, PlusCircle, Download, FileText, CheckCircle2, XCircle, Clock, ShieldAlert, Plus, CheckCircle, UserCheck } from 'lucide-react';
 import Modal from '@/Components/Modal';
+import Pagination from '@/Components/Pagination';
 
 export default function WarningLetterIndex({ auth }) {
     const [letters, setLetters] = useState([]);
+    const [pagination, setPagination] = useState(null);
     const [employees, setEmployees] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -22,13 +24,17 @@ export default function WarningLetterIndex({ auth }) {
 
     const isHrOrAdmin = ['admin', 'hr'].includes(auth.user.role);
 
-    const fetchLetters = async () => {
+    const fetchLetters = async (page = 1) => {
         setLoading(true);
         try {
-            const res = await axios.get('/api/v1/warning-letters');
-            setLetters(res.data.data);
+            const res = await axios.get('/api/v1/warning-letters', { params: { page } });
+            const raw = res.data.data;
+            const items = Array.isArray(raw) ? raw : (raw?.data || []);
+            setLetters(items);
+            setPagination(res.data.pagination || (Array.isArray(raw) ? null : raw));
         } catch (error) {
             console.error("Error fetching warning letters", error);
+            setLetters([]);
         } finally {
             setLoading(false);
         }
@@ -45,7 +51,7 @@ export default function WarningLetterIndex({ auth }) {
     };
 
     useEffect(() => {
-        fetchLetters();
+        fetchLetters(1);
         fetchEmployees();
     }, []);
 
@@ -80,12 +86,13 @@ export default function WarningLetterIndex({ auth }) {
         }
     };
 
-    const filteredLetters = letters.filter(l => {
+    const safeLetters = Array.isArray(letters) ? letters : [];
+    const filteredLetters = safeLetters.filter(l => {
         if (statusFilter === 'all') return true;
         return l.status === statusFilter;
     });
 
-    const activeCount = letters.filter(l => l.status === 'active').length;
+    const activeCount = safeLetters.filter(l => l.status === 'active').length;
 
     const getLevelBadge = (level) => {
         if (level === 'sp_3') return <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">SP 3 (Terakhir)</span>;
@@ -234,6 +241,7 @@ export default function WarningLetterIndex({ auth }) {
                                 </tbody>
                             </table>
                         </div>
+                        <Pagination meta={pagination} onPageChange={fetchLetters} />
                     </div>
                 </div>
             </div>

@@ -51,7 +51,15 @@ class WarningLetterController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $letters
+            'data' => $letters->items(),
+            'pagination' => [
+                'current_page' => $letters->currentPage(),
+                'last_page' => $letters->lastPage(),
+                'per_page' => $letters->perPage(),
+                'total' => $letters->total(),
+                'from' => $letters->firstItem(),
+                'to' => $letters->lastItem(),
+            ]
         ]);
     }
 

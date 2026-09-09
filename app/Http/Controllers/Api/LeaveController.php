@@ -42,7 +42,18 @@ class LeaveController extends Controller
 
         $leaves = $query->paginate($perPage);
 
-        return response()->json(['success' => true, 'data' => $leaves]);
+        return response()->json([
+            'success' => true,
+            'data' => $leaves->items(),
+            'pagination' => [
+                'current_page' => $leaves->currentPage(),
+                'last_page' => $leaves->lastPage(),
+                'per_page' => $leaves->perPage(),
+                'total' => $leaves->total(),
+                'from' => $leaves->firstItem(),
+                'to' => $leaves->lastItem(),
+            ]
+        ]);
     }
 
     public function calendar(Request $request)

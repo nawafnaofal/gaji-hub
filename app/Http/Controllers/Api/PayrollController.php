@@ -28,17 +28,18 @@ class PayrollController extends Controller
         $month = $request->month;
         $year = $request->year;
 
+        // Check if there are already approved or paid payrolls for this month
+        $existingApproved = Payroll::where('period_month', $month)
+            ->where('period_year', $year)
+            ->whereIn('status', ['approved', 'paid'])
+            ->exists();
+
+        if ($existingApproved) {
+            return response()->json(['success' => false, 'message' => 'Gaji untuk periode ini sudah disetujui atau dibayarkan. Tidak bisa digenerate ulang.'], 400);
+        }
+
         DB::beginTransaction();
         try {
-            // Check if there are already approved or paid payrolls for this month
-            $existingApproved = Payroll::where('period_month', $month)
-                ->where('period_year', $year)
-                ->whereIn('status', ['approved', 'paid'])
-                ->exists();
-
-            if ($existingApproved) {
-                return response()->json(['success' => false, 'message' => 'Gaji untuk periode ini sudah disetujui atau dibayarkan. Tidak bisa digenerate ulang.'], 400);
-            }
 
             // Delete existing DRAFT payroll for the same period to avoid duplicates
             Payroll::where('period_month', $month)->where('period_year', $year)->where('status', 'draft')->delete();

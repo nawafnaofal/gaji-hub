@@ -20,7 +20,7 @@ class LeaveTest extends TestCase
     {
         parent::setUp();
 
-        $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\RoleSeeder']);
+        $this->artisan('db:seed', ['--class' => 'Database\\Seeders\\RolesAndPermissionsSeeder']);
 
         $this->hrUser = User::factory()->create(['role' => 'hr']);
 
