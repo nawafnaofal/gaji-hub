@@ -6,7 +6,7 @@ import {
     Sun, Moon, Bell, Menu, X, 
     LayoutDashboard, Megaphone, Users, CalendarCheck, 
     WalletCards, Receipt, Settings as SettingsIcon, Calendar, 
-    Coffee, Clock, Banknote, LogOut, User, Activity, FileCheck, Laptop, Star, Network, BarChart3, AlarmClock, Target, Briefcase, UserMinus, CalendarClock, ShieldAlert, Calculator
+    Coffee, Clock, Banknote, LogOut, User, Activity, FileCheck, Laptop, Star, Network, BarChart3, AlarmClock, Target, Briefcase, UserMinus, CalendarClock, ShieldAlert, Calculator, Gift
 } from 'lucide-react';
 import { useTheme } from '@/Components/ThemeProvider';
 import axios from 'axios';
@@ -111,6 +111,9 @@ export default function AuthenticatedLayout({ header, children }) {
                     </SidebarLink>
                     <SidebarLink href={route('my-payslips')} active={route().current('my-payslips')} icon={WalletCards}>
                         {user.role === 'employee' || user.employee ? 'Slip Gaji Saya' : 'Lihat Slip Gaji Karyawan'}
+                    </SidebarLink>
+                    <SidebarLink href={route('thrs')} active={route().current('thrs')} icon={Gift}>
+                        Tunjangan Hari Raya (THR)
                     </SidebarLink>
                     {isAdminOrHr && (
                         <SidebarLink href={route('announcements')} active={route().current('announcements')} icon={Megaphone}>

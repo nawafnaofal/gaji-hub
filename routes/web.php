@@ -134,6 +134,10 @@ Route::get('/salary-simulator', function () {
     return Inertia::render('SalarySimulator/Index');
 })->middleware(['auth', 'verified', 'role:admin,hr'])->name('salary-simulator');
 
+Route::get('/thrs', function () {
+    return Inertia::render('Thr/Index');
+})->middleware(['auth', 'verified'])->name('thrs');
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -238,10 +242,21 @@ Route::middleware('auth')->prefix('api/v1')->group(function () {
 
         // Employee Bulk CSV Import
         Route::post('/employees/import-csv', [\App\Http\Controllers\Api\EmployeeController::class, 'importCsv'])->middleware('throttle:import');
+
+        // THR (Tunjangan Hari Raya) - Admin & HR
+        Route::get('/thrs/preview', [\App\Http\Controllers\Api\ThrController::class, 'preview']);
+        Route::post('/thrs/generate', [\App\Http\Controllers\Api\ThrController::class, 'generate']);
+        Route::put('/thrs/{id}/approve', [\App\Http\Controllers\Api\ThrController::class, 'approve']);
+        Route::post('/thrs/bulk-approve', [\App\Http\Controllers\Api\ThrController::class, 'bulkApprove']);
+        Route::put('/thrs/{id}/disburse', [\App\Http\Controllers\Api\ThrController::class, 'disburse']);
+        Route::post('/thrs/bulk-disburse', [\App\Http\Controllers\Api\ThrController::class, 'bulkDisburse']);
+        Route::get('/thrs/export/bank', [\App\Http\Controllers\Api\ThrController::class, 'exportBankTransfer']);
     });
     
     // Shared API
     Route::middleware('auth')->group(function () {
+        Route::get('/thrs', [\App\Http\Controllers\Api\ThrController::class, 'index']);
+        Route::get('/thrs/{id}/slip-pdf', [\App\Http\Controllers\Api\ThrController::class, 'downloadSlipPdf']);
         Route::get('/employees', [\App\Http\Controllers\Api\EmployeeController::class, 'index']);
         Route::get('/announcements', [\App\Http\Controllers\Api\AnnouncementController::class, 'index']);
         
