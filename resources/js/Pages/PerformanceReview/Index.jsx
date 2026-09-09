@@ -30,9 +30,11 @@ export default function PerformanceReviewIndex({ auth }) {
         setLoading(true);
         try {
             const response = await axios.get('/api/v1/performance-reviews');
-            setReviews(response.data.data);
+            const raw = response.data.data;
+            setReviews(Array.isArray(raw) ? raw : (raw?.data || []));
         } catch (error) {
             console.error(error);
+            setReviews([]);
         } finally {
             setLoading(false);
         }
@@ -126,7 +128,7 @@ export default function PerformanceReviewIndex({ auth }) {
                                 <tbody>
                                     {loading ? (
                                         <tr><td colSpan="5" className="p-4 text-center dark:text-gray-400">Memuat data...</td></tr>
-                                    ) : reviews.length === 0 ? (
+                                    ) : !Array.isArray(reviews) || reviews.length === 0 ? (
                                         <tr><td colSpan="5" className="p-4 text-center dark:text-gray-400">Belum ada data penilaian kinerja.</td></tr>
                                     ) : (
                                         reviews.map(review => (

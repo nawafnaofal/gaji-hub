@@ -24,9 +24,11 @@ export default function LoanIndex({ auth }) {
         setLoading(true);
         try {
             const response = await axios.get('/api/v1/loans');
-            setLoans(response.data.data);
+            const raw = response.data.data;
+            setLoans(Array.isArray(raw) ? raw : (raw?.data || []));
         } catch (error) {
             console.error(error);
+            setLoans([]);
         } finally {
             setLoading(false);
         }
@@ -123,7 +125,7 @@ export default function LoanIndex({ auth }) {
                                 <tbody>
                                     {loading ? (
                                         <tr><td colSpan="6" className="p-4 text-center dark:text-gray-400">Memuat data...</td></tr>
-                                    ) : loans.length === 0 ? (
+                                    ) : !Array.isArray(loans) || loans.length === 0 ? (
                                         <tr><td colSpan="6" className="p-4 text-center dark:text-gray-400">Tidak ada pengajuan pinjaman.</td></tr>
                                     ) : (
                                         loans.map(loan => (

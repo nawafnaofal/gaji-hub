@@ -30,8 +30,8 @@ class OrgChartController extends Controller
                 $node = [
                     'id' => $element->id,
                     'name' => $element->user ? $element->user->name : 'Unknown',
-                    'title' => $element->position,
-                    'department' => $element->department
+                    'title' => $element->position ?: ($element->job_title ?: 'Staff'),
+                    'department' => $element->department ?: ($element->department_id ?: '-')
                 ];
 
                 if ($children) {

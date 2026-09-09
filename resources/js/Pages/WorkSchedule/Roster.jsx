@@ -22,11 +22,17 @@ export default function Roster({ auth }) {
                 axios.get('/api/v1/work-schedules'),
                 axios.get(`/api/v1/employee-shifts?month=${month}&year=${year}`)
             ]);
-            setEmployees(empRes.data.data.data || empRes.data.data);
-            setWorkSchedules(wsRes.data.data);
-            setShifts(shiftRes.data.data);
+            const rawEmp = empRes.data.data;
+            setEmployees(Array.isArray(rawEmp) ? rawEmp : (rawEmp?.data || []));
+            const rawWs = wsRes.data.data;
+            setWorkSchedules(Array.isArray(rawWs) ? rawWs : (rawWs?.data || []));
+            const rawShifts = shiftRes.data.data;
+            setShifts(Array.isArray(rawShifts) ? rawShifts : (rawShifts?.data || []));
         } catch (error) {
             console.error(error);
+            setEmployees([]);
+            setWorkSchedules([]);
+            setShifts([]);
         }
     };
 
@@ -51,6 +57,7 @@ export default function Roster({ auth }) {
     const days = Array.from({ length: getDaysInMonth() }, (_, i) => i + 1);
 
     const getShiftFor = (empId, day) => {
+        if (!Array.isArray(shifts)) return null;
         const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         return shifts.find(s => s.employee_id === empId && s.date === dateStr);
     };
@@ -93,31 +100,39 @@ export default function Roster({ auth }) {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {employees.map(emp => (
-                                            <tr key={emp.id} className="border-b dark:border-gray-700">
-                                                <td className="px-4 py-2 border font-medium text-gray-900 dark:text-white whitespace-nowrap">
-                                                    {emp.user?.name}
+                                        {!Array.isArray(employees) || employees.length === 0 ? (
+                                            <tr>
+                                                <td colSpan={days.length + 1} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                                                    Belum ada karyawan.
                                                 </td>
-                                                {days.map(d => {
-                                                    const shift = getShiftFor(emp.id, d);
-                                                    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                                                    return (
-                                                        <td key={d} className="border p-1">
-                                                            <select
-                                                                className="w-20 text-xs bg-gray-50 border border-gray-300 text-gray-900 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                                                value={shift ? shift.work_schedule_id : ''}
-                                                                onChange={(e) => handleAssign(emp.id, dateStr, e.target.value)}
-                                                            >
-                                                                <option value=""></option>
-                                                                {workSchedules.map(ws => (
-                                                                    <option key={ws.id} value={ws.id}>{ws.name}</option>
-                                                                ))}
-                                                            </select>
-                                                        </td>
-                                                    );
-                                                })}
                                             </tr>
-                                        ))}
+                                        ) : (
+                                            employees.map(emp => (
+                                                <tr key={emp.id} className="border-b dark:border-gray-700">
+                                                    <td className="px-4 py-2 border font-medium text-gray-900 dark:text-white whitespace-nowrap">
+                                                        {emp.user?.name}
+                                                    </td>
+                                                    {days.map(d => {
+                                                        const shift = getShiftFor(emp.id, d);
+                                                        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                                                        return (
+                                                            <td key={d} className="border p-1">
+                                                                <select
+                                                                    className="w-20 text-xs bg-gray-50 border border-gray-300 text-gray-900 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                                                    value={shift ? shift.work_schedule_id : ''}
+                                                                    onChange={(e) => handleAssign(emp.id, dateStr, e.target.value)}
+                                                                >
+                                                                    <option value=""></option>
+                                                                    {(Array.isArray(workSchedules) ? workSchedules : []).map(ws => (
+                                                                        <option key={ws.id} value={ws.id}>{ws.name}</option>
+                                                                    ))}
+                                                                </select>
+                                                            </td>
+                                                        );
+                                                    })}
+                                                </tr>
+                                            ))
+                                        )}
                                     </tbody>
                                 </table>
                             </div>

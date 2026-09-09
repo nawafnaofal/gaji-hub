@@ -37,6 +37,29 @@ class Employee extends Model
         'profile_photo',
     ];
 
+    protected $appends = ['leave_balance'];
+
+    public function getLeaveBalanceAttribute(): int
+    {
+        $currentYear = \Carbon\Carbon::now()->year;
+        $quota = $this->annual_leave_quota ?? 12;
+        
+        $usedLeaves = Leave::where('employee_id', $this->id)
+            ->where('status', 'approved')
+            ->where('type', 'annual')
+            ->whereYear('start_date', $currentYear)
+            ->get()
+            ->sum(function ($leave) {
+                $start = \Carbon\Carbon::parse($leave->start_date);
+                $end = \Carbon\Carbon::parse($leave->end_date);
+                return $start->diffInDaysFiltered(function (\Carbon\Carbon $date) {
+                    return !$date->isWeekend();
+                }, $end) + 1;
+            });
+
+        return (int) max(0, $quota - $usedLeaves);
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

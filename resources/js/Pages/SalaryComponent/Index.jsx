@@ -15,9 +15,11 @@ export default function SalaryComponentIndex({ auth }) {
         setLoading(true);
         try {
             const response = await axios.get('/api/v1/salary-components');
-            setComponents(response.data.data);
+            const raw = response.data.data;
+            setComponents(Array.isArray(raw) ? raw : (raw?.data || []));
         } catch (error) {
             console.error("Error fetching components", error);
+            setComponents([]);
         } finally {
             setLoading(false);
         }
@@ -88,7 +90,7 @@ export default function SalaryComponentIndex({ auth }) {
                                     <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                                         {loading ? (
                                             <tr><td colSpan="3" className="p-8 text-center text-gray-500 dark:text-gray-400">Memuat data...</td></tr>
-                                        ) : components.length === 0 ? (
+                                        ) : !Array.isArray(components) || components.length === 0 ? (
                                             <tr><td colSpan="3" className="p-8 text-center text-gray-500 dark:text-gray-400">Belum ada komponen gaji.</td></tr>
                                         ) : (
                                             components.map((item) => (

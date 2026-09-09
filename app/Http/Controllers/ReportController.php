@@ -65,19 +65,39 @@ class ReportController extends Controller
             ->where('period_year', $request->year)
             ->get();
 
+        $mappedPayrolls = $payrolls->map(function ($p) {
+            $details = is_array($p->details) ? $p->details : (json_decode($p->details, true) ?? []);
+            $bpjsKes = $details['deductions']['bpjs_kesehatan'] ?? 0;
+            $bpjsTk = ($details['deductions']['bpjs_tk_jht'] ?? 0) + ($details['deductions']['bpjs_tk_jp'] ?? 0);
+            $pph21 = $details['deductions']['pph21'] ?? 0;
+
+            return [
+                'id' => $p->id,
+                'employee' => $p->employee,
+                'basic_salary' => (float) ($p->total_basic ?? 0),
+                'total_allowances' => (float) ($p->total_allowance ?? 0),
+                'total_deductions' => (float) ($p->total_deduction ?? 0),
+                'bpjs_kesehatan_employee' => (float) $bpjsKes,
+                'bpjs_ketenagakerjaan_employee' => (float) $bpjsTk,
+                'pph21' => (float) $pph21,
+                'net_salary' => (float) ($p->net_salary ?? 0),
+                'status' => $p->status,
+            ];
+        });
+
         $summary = [
-            'total_employees' => $payrolls->count(),
-            'total_basic_salary' => $payrolls->sum('basic_salary'),
-            'total_allowances' => $payrolls->sum('total_allowances'),
-            'total_deductions' => $payrolls->sum('total_deductions'),
-            'total_net_salary' => $payrolls->sum('net_salary'),
-            'total_bpjs' => $payrolls->sum('bpjs_kesehatan_employee') + $payrolls->sum('bpjs_ketenagakerjaan_employee'),
-            'total_pph21' => $payrolls->sum('pph21'),
+            'total_employees' => $mappedPayrolls->count(),
+            'total_basic_salary' => $mappedPayrolls->sum('basic_salary'),
+            'total_allowances' => $mappedPayrolls->sum('total_allowances'),
+            'total_deductions' => $mappedPayrolls->sum('total_deductions'),
+            'total_net_salary' => $mappedPayrolls->sum('net_salary'),
+            'total_bpjs' => $mappedPayrolls->sum('bpjs_kesehatan_employee') + $mappedPayrolls->sum('bpjs_ketenagakerjaan_employee'),
+            'total_pph21' => $mappedPayrolls->sum('pph21'),
         ];
 
         return response()->json([
             'success' => true,
-            'data' => $payrolls,
+            'data' => $mappedPayrolls,
             'summary' => $summary,
             'period' => $request->month . '/' . $request->year,
         ]);
@@ -141,10 +161,22 @@ class ReportController extends Controller
             ->where('status', 'approved')
             ->get();
 
+        $mappedOvertimes = $overtimes->map(function ($ot) {
+            return [
+                'id' => $ot->id,
+                'date' => $ot->date,
+                'employee' => $ot->employee,
+                'duration_hours' => (float) $ot->duration_hours,
+                'hours' => (float) $ot->duration_hours,
+                'reason' => $ot->reason,
+                'status' => $ot->status,
+            ];
+        });
+
         return response()->json([
             'success' => true,
-            'data' => $overtimes,
-            'total_hours' => $overtimes->sum('hours'),
+            'data' => $mappedOvertimes,
+            'total_hours' => (float) $overtimes->sum('duration_hours'),
             'period' => $request->month . '/' . $request->year,
         ]);
     }

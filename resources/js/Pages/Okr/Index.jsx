@@ -35,21 +35,26 @@ export default function OkrManagement({ auth }) {
     const fetchEmployees = async () => {
         try {
             const res = await axios.get('/api/v1/employees');
-            setEmployees(res.data.data);
-            if (!newObj.employee_id && res.data.data.length > 0) {
-                setNewObj(prev => ({ ...prev, employee_id: res.data.data[0].id }));
+            const raw = res.data.data;
+            const empList = Array.isArray(raw) ? raw : (raw?.data || []);
+            setEmployees(empList);
+            if (!newObj.employee_id && empList.length > 0) {
+                setNewObj(prev => ({ ...prev, employee_id: empList[0].id }));
             }
         } catch (error) {
             console.error(error);
+            setEmployees([]);
         }
     };
 
     const fetchData = async () => {
         try {
             const res = await axios.get('/api/v1/okr');
-            setObjectives(res.data.data);
+            const raw = res.data.data;
+            setObjectives(Array.isArray(raw) ? raw : (raw?.data || []));
         } catch (error) {
             console.error(error);
+            setObjectives([]);
         } finally {
             setLoading(false);
         }
@@ -130,6 +135,12 @@ export default function OkrManagement({ auth }) {
                     {loading ? (
                         <div className="flex justify-center p-12">
                             <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+                        </div>
+                    ) : !Array.isArray(objectives) || objectives.length === 0 ? (
+                        <div className="bg-white dark:bg-gray-800 rounded-xl p-12 text-center text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700">
+                            <Target size={40} className="mx-auto mb-3 text-gray-400 opacity-60" />
+                            <p className="font-medium">Belum ada Objective & Key Results (OKR) yang terdaftar.</p>
+                            <p className="text-sm mt-1">Klik tombol "+ Buat Objective Baru" untuk menetapkan target kinerja.</p>
                         </div>
                     ) : (
                         <div className="space-y-6">

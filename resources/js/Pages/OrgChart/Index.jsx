@@ -82,9 +82,11 @@ export default function OrgChartIndex({ auth }) {
     const fetchEmployees = async () => {
         try {
             const response = await axios.get('/api/v1/employees');
-            setEmployees(response.data.data);
+            const raw = response.data.data;
+            setEmployees(Array.isArray(raw) ? raw : (raw?.data || []));
         } catch (error) {
             console.error(error);
+            setEmployees([]);
         }
     };
 
@@ -92,9 +94,11 @@ export default function OrgChartIndex({ auth }) {
         setLoading(true);
         try {
             const response = await axios.get('/api/v1/org-chart');
-            setTreeData(response.data.data);
+            const raw = response.data.data;
+            setTreeData(Array.isArray(raw) ? raw : (raw?.data || []));
         } catch (error) {
             console.error(error);
+            setTreeData([]);
         } finally {
             setLoading(false);
         }
@@ -157,7 +161,7 @@ export default function OrgChartIndex({ auth }) {
                             <div className="min-w-max flex justify-center py-4">
                                 {loading ? (
                                     <p className="text-gray-500 dark:text-gray-400">Memuat struktur organisasi...</p>
-                                ) : treeData.length === 0 ? (
+                                ) : !Array.isArray(treeData) || treeData.length === 0 ? (
                                     <p className="text-gray-500 dark:text-gray-400">Belum ada data karyawan.</p>
                                 ) : (
                                     <div className="flex gap-8">

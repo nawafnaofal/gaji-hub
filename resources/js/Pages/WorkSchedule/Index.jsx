@@ -34,16 +34,25 @@ export default function WorkScheduleIndex({ auth }) {
         setLoading(true);
         try {
             const res = await axios.get('/api/v1/work-schedules');
-            setSchedules(res.data.data);
-        } catch (e) { console.error(e); }
-        finally { setLoading(false); }
+            const raw = res.data.data;
+            setSchedules(Array.isArray(raw) ? raw : (raw?.data || []));
+        } catch (e) {
+            console.error(e);
+            setSchedules([]);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const fetchEmployees = async () => {
         try {
             const res = await axios.get('/api/v1/employees');
-            setEmployees(res.data.data);
-        } catch (e) { console.error(e); }
+            const raw = res.data.data;
+            setEmployees(Array.isArray(raw) ? raw : (raw?.data || []));
+        } catch (e) {
+            console.error(e);
+            setEmployees([]);
+        }
     };
 
     const toggleDay = (day) => {
@@ -223,7 +232,7 @@ export default function WorkScheduleIndex({ auth }) {
 
                         {loading ? (
                             <p className="text-center text-gray-500 py-8">Memuat jadwal...</p>
-                        ) : schedules.length === 0 ? (
+                        ) : !Array.isArray(schedules) || schedules.length === 0 ? (
                             <p className="text-center text-gray-500 py-8">Belum ada jadwal kerja. Buat jadwal di atas.</p>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

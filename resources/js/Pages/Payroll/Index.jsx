@@ -21,10 +21,13 @@ export default function PayrollIndex({ auth }) {
             const response = await axios.get(`/api/v1/payrolls`, {
                 params: { page, search }
             });
-            setPayrolls(response.data.data.data);
-            setTotalPages(response.data.data.last_page);
+            const rawData = response.data?.data;
+            const items = Array.isArray(rawData) ? rawData : (rawData?.data || []);
+            setPayrolls(items);
+            setTotalPages(rawData?.last_page || 1);
         } catch (error) {
             console.error("Error fetching payrolls", error);
+            setPayrolls([]);
         } finally {
             setLoading(false);
         }
@@ -142,7 +145,7 @@ export default function PayrollIndex({ auth }) {
                                         <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                                             {loading ? (
                                                 <tr><td colSpan="6" className="p-8 text-center text-gray-500 dark:text-gray-400">Memuat data...</td></tr>
-                                            ) : payrolls.length === 0 ? (
+                                            ) : !Array.isArray(payrolls) || payrolls.length === 0 ? (
                                                 <tr><td colSpan="6" className="p-8 text-center text-gray-500 dark:text-gray-400">Data tidak ditemukan.</td></tr>
                                             ) : (
                                                 payrolls.map((item) => (

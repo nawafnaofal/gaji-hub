@@ -24,18 +24,22 @@ export default function Resignation({ auth }) {
     const fetchData = async () => {
         try {
             const res = await axios.get('/api/v1/resignations');
-            setResignations(res.data.data);
+            const raw = res.data.data;
+            setResignations(Array.isArray(raw) ? raw : (raw?.data || []));
         } catch (error) {
             console.error(error);
+            setResignations([]);
         }
     };
 
     const fetchEmployees = async () => {
         try {
             const res = await axios.get('/api/v1/employees?limit=1000');
-            setEmployees(res.data.data.data || res.data.data);
+            const raw = res.data.data;
+            setEmployees(Array.isArray(raw) ? raw : (raw?.data || []));
         } catch (error) {
             console.error(error);
+            setEmployees([]);
         }
     };
 
@@ -100,41 +104,49 @@ export default function Resignation({ auth }) {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {resignations.map(res => (
-                                            <tr key={res.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
-                                                <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
-                                                    {res.employee?.user?.name}
-                                                </td>
-                                                <td className="px-6 py-4">{res.resign_date}</td>
-                                                <td className="px-6 py-4">{res.type === 'voluntary' ? 'Resign Sukarela' : 'PHK'}</td>
-                                                <td className="px-6 py-4">{formatCurrency(res.severance_pay)}</td>
-                                                <td className="px-6 py-4">{formatCurrency(res.upmk_pay)}</td>
-                                                <td className="px-6 py-4">
-                                                    <span className={`px-2 py-1 rounded text-xs text-white ${res.status === 'approved' ? 'bg-green-500' : res.status === 'rejected' ? 'bg-red-500' : 'bg-yellow-500'}`}>
-                                                        {res.status}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 flex items-center gap-3">
-                                                    {res.status === 'pending' && (
-                                                        <button 
-                                                            onClick={() => handleApprove(res.id)}
-                                                            className="text-green-600 hover:underline font-bold text-xs"
-                                                        >
-                                                            Approve
-                                                        </button>
-                                                    )}
-                                                    <a
-                                                        href={`/api/v1/employees/${res.employee_id}/paklaring`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="px-2.5 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 rounded text-xs font-semibold hover:underline flex items-center gap-1"
-                                                        title="Cetak Surat Paklaring (PDF)"
-                                                    >
-                                                        📄 Unduh Paklaring
-                                                    </a>
+                                        {!Array.isArray(resignations) || resignations.length === 0 ? (
+                                            <tr>
+                                                <td colSpan="7" className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                                                    Belum ada pengajuan resign atau offboarding.
                                                 </td>
                                             </tr>
-                                        ))}
+                                        ) : (
+                                            resignations.map(res => (
+                                                <tr key={res.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+                                                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
+                                                        {res.employee?.user?.name}
+                                                    </td>
+                                                    <td className="px-6 py-4">{res.resign_date}</td>
+                                                    <td className="px-6 py-4">{res.type === 'voluntary' ? 'Resign Sukarela' : 'PHK'}</td>
+                                                    <td className="px-6 py-4">{formatCurrency(res.severance_pay)}</td>
+                                                    <td className="px-6 py-4">{formatCurrency(res.upmk_pay)}</td>
+                                                    <td className="px-6 py-4">
+                                                        <span className={`px-2 py-1 rounded text-xs text-white ${res.status === 'approved' ? 'bg-green-500' : res.status === 'rejected' ? 'bg-red-500' : 'bg-yellow-500'}`}>
+                                                            {res.status}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 flex items-center gap-3">
+                                                        {res.status === 'pending' && (
+                                                            <button 
+                                                                onClick={() => handleApprove(res.id)}
+                                                                className="text-green-600 hover:underline font-bold text-xs"
+                                                            >
+                                                                Approve
+                                                            </button>
+                                                        )}
+                                                        <a
+                                                            href={`/api/v1/employees/${res.employee_id}/paklaring`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="px-2.5 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 rounded text-xs font-semibold hover:underline flex items-center gap-1"
+                                                            title="Cetak Surat Paklaring (PDF)"
+                                                        >
+                                                            📄 Unduh Paklaring
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
                                     </tbody>
                                 </table>
                             </div>

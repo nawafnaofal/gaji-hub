@@ -21,10 +21,14 @@ export default function Recruitment({ auth }) {
                 axios.get('/api/v1/recruitment/positions'),
                 axios.get('/api/v1/recruitment/applications')
             ]);
-            setPositions(posRes.data.data);
-            setApplications(appRes.data.data);
+            const rawPos = posRes.data.data;
+            setPositions(Array.isArray(rawPos) ? rawPos : (rawPos?.data || []));
+            const rawApps = appRes.data.data;
+            setApplications(Array.isArray(rawApps) ? rawApps : (rawApps?.data || []));
         } catch (error) {
             console.error(error);
+            setPositions([]);
+            setApplications([]);
         } finally {
             setLoading(false);
         }
@@ -79,12 +83,12 @@ export default function Recruitment({ auth }) {
                                     <h4 className="font-bold text-gray-700 dark:text-gray-300 mb-4 capitalize flex justify-between items-center">
                                         {status}
                                         <span className="bg-white dark:bg-gray-700 text-sm px-2 py-0.5 rounded-full shadow-sm">
-                                            {applications.filter(a => a.status === status).length}
+                                            {(Array.isArray(applications) ? applications : []).filter(a => a.status === status).length}
                                         </span>
                                     </h4>
                                     
                                     <div className="flex-1 overflow-y-auto space-y-4 pr-1 custom-scrollbar">
-                                        {applications.filter(a => a.status === status).map(app => (
+                                        {(Array.isArray(applications) ? applications : []).filter(a => a.status === status).map(app => (
                                             <div key={app.id} className="bg-white dark:bg-gray-700 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-600 space-y-2.5">
                                                 <div>
                                                     <h5 className="font-bold text-sm text-gray-900 dark:text-white">{app.candidate?.name}</h5>
