@@ -146,6 +146,10 @@ Route::get('/shift-exchanges', function () {
     return Inertia::render('ShiftExchange/Index');
 })->middleware(['auth', 'verified'])->name('shift-exchanges');
 
+Route::get('/tax-reports', function () {
+    return Inertia::render('TaxReport/Index');
+})->middleware(['auth', 'verified'])->name('tax-reports');
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -266,10 +270,19 @@ Route::middleware('auth')->prefix('api/v1')->group(function () {
         Route::put('/branches/{branch}', [\App\Http\Controllers\Api\BranchController::class, 'update']);
         Route::delete('/branches/{branch}', [\App\Http\Controllers\Api\BranchController::class, 'destroy']);
         Route::post('/branches/{branch}/assign', [\App\Http\Controllers\Api\BranchController::class, 'assignEmployees']);
+
+        // Tax Report 1721-A1 (Admin & HR)
+        Route::get('/tax-reports', [\App\Http\Controllers\Api\TaxReportController::class, 'index']);
+        Route::get('/tax-reports/{employee}/preview', [\App\Http\Controllers\Api\TaxReportController::class, 'preview'])->whereNumber('employee');
+        Route::get('/tax-reports/{employee}/pdf', [\App\Http\Controllers\Api\TaxReportController::class, 'downloadPdf'])->whereNumber('employee');
     });
     
     // Shared API
     Route::middleware('auth')->group(function () {
+        // Tax Report 1721-A1 (Self-Service)
+        Route::get('/tax-reports/my', [\App\Http\Controllers\Api\TaxReportController::class, 'myTaxReport']);
+        Route::get('/tax-reports/my/pdf', [\App\Http\Controllers\Api\TaxReportController::class, 'myTaxReportPdf']);
+
         Route::get('/branches', [\App\Http\Controllers\Api\BranchController::class, 'index']);
         Route::get('/thrs', [\App\Http\Controllers\Api\ThrController::class, 'index']);
         Route::get('/thrs/{id}/slip-pdf', [\App\Http\Controllers\Api\ThrController::class, 'downloadSlipPdf']);

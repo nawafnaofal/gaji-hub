@@ -6,7 +6,7 @@ import {
     Sun, Moon, Bell, Menu, X, 
     LayoutDashboard, Megaphone, Users, CalendarCheck, 
     WalletCards, Receipt, Settings as SettingsIcon, Calendar, 
-    Coffee, Clock, Banknote, LogOut, User, Activity, FileCheck, Laptop, Star, Network, BarChart3, AlarmClock, Target, Briefcase, UserMinus, CalendarClock, ShieldAlert, Calculator, Gift, Building2, ArrowLeftRight
+    Coffee, Clock, Banknote, LogOut, User, Activity, FileCheck, Laptop, Star, Network, BarChart3, AlarmClock, Target, Briefcase, UserMinus, CalendarClock, ShieldAlert, Calculator, Gift, Building2, ArrowLeftRight, FileSpreadsheet
 } from 'lucide-react';
 import { useTheme } from '@/Components/ThemeProvider';
 import axios from 'axios';
@@ -160,6 +160,9 @@ export default function AuthenticatedLayout({ header, children }) {
                             <SidebarGroup title="Payroll & Finance" />
                             <SidebarLink href={route('payroll')} active={route().current('payroll')} icon={WalletCards}>
                                 Tabel Payroll
+                            </SidebarLink>
+                            <SidebarLink href={route('tax-reports')} active={route().current('tax-reports')} icon={FileSpreadsheet}>
+                                Pajak 1721-A1
                             </SidebarLink>
                             <SidebarLink href={route('salary-components')} active={route().current('salary-components')} icon={Receipt}>
                                 Komponen Gaji

@@ -76,18 +76,31 @@ export default function MyPayslip({ auth }) {
                                     : 'Transparan, aman, dan dapat diunduh kapan saja dalam format PDF resmi.'}
                             </p>
                         </div>
-                        <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md p-2 rounded-xl border border-white/20">
-                            <Calendar size={18} className="text-blue-200" />
-                            <select 
-                                value={selectedYear}
-                                onChange={(e) => setSelectedYear(Number(e.target.value))}
-                                className="bg-transparent text-white font-semibold border-none focus:ring-0 text-sm cursor-pointer pr-8"
+                        <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md p-2 rounded-xl border border-white/20">
+                                <Calendar size={18} className="text-blue-200" />
+                                <select 
+                                    value={selectedYear}
+                                    onChange={(e) => setSelectedYear(Number(e.target.value))}
+                                    className="bg-transparent text-white font-semibold border-none focus:ring-0 text-sm cursor-pointer pr-8"
+                                >
+                                    {[0, 1, 2].map(offset => {
+                                        const y = new Date().getFullYear() - offset;
+                                        return <option key={y} value={y} className="text-gray-800">Tahun {y}</option>;
+                                    })}
+                                </select>
+                            </div>
+
+                            <a
+                                href={`/api/v1/tax-reports/my/pdf?year=${selectedYear}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-2 px-3.5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold shadow-md transition hover:scale-[1.02]"
+                                title="Unduh Bukti Potong Pajak 1721-A1 Resmi"
                             >
-                                {[0, 1, 2].map(offset => {
-                                    const y = new Date().getFullYear() - offset;
-                                    return <option key={y} value={y} className="text-gray-800">Tahun {y}</option>;
-                                })}
-                            </select>
+                                <FileText size={15} />
+                                Form 1721-A1 ({selectedYear})
+                            </a>
                         </div>
                     </div>
 
