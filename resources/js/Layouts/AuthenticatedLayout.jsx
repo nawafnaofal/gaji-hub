@@ -6,7 +6,7 @@ import {
     Sun, Moon, Bell, Menu, X, 
     LayoutDashboard, Megaphone, Users, CalendarCheck, 
     WalletCards, Receipt, Settings as SettingsIcon, Calendar, 
-    Coffee, Clock, Banknote, LogOut, User, Activity, FileCheck, Laptop, Star, Network, BarChart3, AlarmClock, Target, Briefcase, UserMinus, CalendarClock, ShieldAlert, Calculator, Gift, Building2, ArrowLeftRight, FileSpreadsheet
+    Coffee, Clock, Banknote, LogOut, User, Activity, FileCheck, Laptop, Star, Network, BarChart3, AlarmClock, Target, Briefcase, UserMinus, CalendarClock, ShieldAlert, Calculator, Gift, Building2, ArrowLeftRight, FileSpreadsheet, Workflow
 } from 'lucide-react';
 import { useTheme } from '@/Components/ThemeProvider';
 import axios from 'axios';
@@ -189,6 +189,9 @@ export default function AuthenticatedLayout({ header, children }) {
                             </SidebarLink>
 
                             <SidebarGroup title="Sistem & Laporan" />
+                            <SidebarLink href={route('approval-workflows')} active={route().current('approval-workflows')} icon={Workflow}>
+                                Workflow Persetujuan
+                            </SidebarLink>
                             <SidebarLink href={route('reports')} active={route().current('reports')} icon={BarChart3}>
                                 Pusat Laporan
                             </SidebarLink>

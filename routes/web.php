@@ -82,6 +82,10 @@ Route::get('/contract-compensations', function () {
     return Inertia::render('ContractCompensation/Index');
 })->middleware(['auth', 'verified'])->name('contract-compensations');
 
+Route::get('/approval-workflows', function () {
+    return Inertia::render('ApprovalWorkflow/Index');
+})->middleware(['auth', 'verified', 'role:admin,hr'])->name('approval-workflows');
+
 Route::get('/recruitment', function () {
     return Inertia::render('Recruitment/Index');
 })->middleware(['auth', 'verified', 'role:admin,hr'])->name('recruitment');
@@ -287,6 +291,13 @@ Route::middleware('auth')->prefix('api/v1')->group(function () {
         Route::post('/contract-compensations/generate', [\App\Http\Controllers\Api\ContractCompensationController::class, 'generate']);
         Route::put('/contract-compensations/{id}/approve', [\App\Http\Controllers\Api\ContractCompensationController::class, 'approve']);
         Route::put('/contract-compensations/{id}/pay', [\App\Http\Controllers\Api\ContractCompensationController::class, 'markPaid']);
+
+        // Approval Workflows (Admin & HR)
+        Route::get('/approval-workflows', [\App\Http\Controllers\Api\ApprovalWorkflowController::class, 'index']);
+        Route::post('/approval-workflows', [\App\Http\Controllers\Api\ApprovalWorkflowController::class, 'store']);
+        Route::put('/approval-workflows/{id}', [\App\Http\Controllers\Api\ApprovalWorkflowController::class, 'update']);
+        Route::delete('/approval-workflows/{id}', [\App\Http\Controllers\Api\ApprovalWorkflowController::class, 'destroy']);
+        Route::post('/approval-workflows/preview', [\App\Http\Controllers\Api\ApprovalWorkflowController::class, 'preview']);
     });
     
     // Shared API
