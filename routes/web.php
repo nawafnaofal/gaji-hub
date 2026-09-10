@@ -142,6 +142,10 @@ Route::get('/branches', function () {
     return Inertia::render('Branch/Index');
 })->middleware(['auth', 'verified', 'role:admin,hr'])->name('branches');
 
+Route::get('/shift-exchanges', function () {
+    return Inertia::render('ShiftExchange/Index');
+})->middleware(['auth', 'verified'])->name('shift-exchanges');
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -269,6 +273,15 @@ Route::middleware('auth')->prefix('api/v1')->group(function () {
         Route::get('/branches', [\App\Http\Controllers\Api\BranchController::class, 'index']);
         Route::get('/thrs', [\App\Http\Controllers\Api\ThrController::class, 'index']);
         Route::get('/thrs/{id}/slip-pdf', [\App\Http\Controllers\Api\ThrController::class, 'downloadSlipPdf']);
+
+        // Shift Exchange API
+        Route::get('/shift-exchanges', [\App\Http\Controllers\Api\ShiftExchangeController::class, 'index']);
+        Route::get('/shift-exchanges/available-shifts', [\App\Http\Controllers\Api\ShiftExchangeController::class, 'availableShifts']);
+        Route::post('/shift-exchanges', [\App\Http\Controllers\Api\ShiftExchangeController::class, 'store']);
+        Route::put('/shift-exchanges/{shiftExchange}/peer-respond', [\App\Http\Controllers\Api\ShiftExchangeController::class, 'peerRespond']);
+        Route::put('/shift-exchanges/{shiftExchange}/manager-approve', [\App\Http\Controllers\Api\ShiftExchangeController::class, 'managerApprove']);
+        Route::put('/shift-exchanges/{shiftExchange}/cancel', [\App\Http\Controllers\Api\ShiftExchangeController::class, 'cancel']);
+
         Route::get('/employees', [\App\Http\Controllers\Api\EmployeeController::class, 'index']);
         Route::get('/announcements', [\App\Http\Controllers\Api\AnnouncementController::class, 'index']);
         

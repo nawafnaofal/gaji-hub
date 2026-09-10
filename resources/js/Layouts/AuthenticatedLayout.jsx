@@ -6,7 +6,7 @@ import {
     Sun, Moon, Bell, Menu, X, 
     LayoutDashboard, Megaphone, Users, CalendarCheck, 
     WalletCards, Receipt, Settings as SettingsIcon, Calendar, 
-    Coffee, Clock, Banknote, LogOut, User, Activity, FileCheck, Laptop, Star, Network, BarChart3, AlarmClock, Target, Briefcase, UserMinus, CalendarClock, ShieldAlert, Calculator, Gift, Building2
+    Coffee, Clock, Banknote, LogOut, User, Activity, FileCheck, Laptop, Star, Network, BarChart3, AlarmClock, Target, Briefcase, UserMinus, CalendarClock, ShieldAlert, Calculator, Gift, Building2, ArrowLeftRight
 } from 'lucide-react';
 import { useTheme } from '@/Components/ThemeProvider';
 import axios from 'axios';
@@ -203,6 +203,9 @@ export default function AuthenticatedLayout({ header, children }) {
                     </SidebarLink>
                     <SidebarLink href={route('overtimes')} active={route().current('overtimes')} icon={Clock}>
                         Lembur
+                    </SidebarLink>
+                    <SidebarLink href={route('shift-exchanges')} active={route().current('shift-exchanges')} icon={ArrowLeftRight}>
+                        Tukar Shift
                     </SidebarLink>
                     <SidebarLink href={route('reimbursements')} active={route().current('reimbursements')} icon={Receipt}>
                         Klaim (Reimburse)
