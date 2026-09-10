@@ -219,6 +219,8 @@ Route::middleware('auth')->prefix('api/v1')->group(function () {
 
         Route::post('/announcements', [\App\Http\Controllers\Api\AnnouncementController::class, 'store']);
         Route::put('/announcements/{id}', [\App\Http\Controllers\Api\AnnouncementController::class, 'update']);
+        Route::put('/announcements/{id}/pin', [\App\Http\Controllers\Api\AnnouncementController::class, 'togglePin']);
+        Route::get('/announcements/{id}/stats', [\App\Http\Controllers\Api\AnnouncementController::class, 'readStats']);
         Route::delete('/announcements/{id}', [\App\Http\Controllers\Api\AnnouncementController::class, 'destroy']);
         
         Route::post('/company-documents', [\App\Http\Controllers\CompanyDocumentController::class, 'store']);
@@ -311,6 +313,7 @@ Route::middleware('auth')->prefix('api/v1')->group(function () {
 
         Route::get('/employees', [\App\Http\Controllers\Api\EmployeeController::class, 'index']);
         Route::get('/announcements', [\App\Http\Controllers\Api\AnnouncementController::class, 'index']);
+        Route::post('/announcements/{id}/read', [\App\Http\Controllers\Api\AnnouncementController::class, 'markAsRead']);
         
         // Notifications
         Route::get('/notifications', [\App\Http\Controllers\Api\NotificationController::class, 'index']);
