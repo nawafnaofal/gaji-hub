@@ -333,6 +333,7 @@ Route::middleware('auth')->prefix('api/v1')->group(function () {
     Route::post('/reimbursements', [\App\Http\Controllers\Api\ReimbursementController::class, 'store']);
     Route::get('/overtimes', [\App\Http\Controllers\Api\OvertimeController::class, 'index']);
     Route::post('/overtimes', [\App\Http\Controllers\Api\OvertimeController::class, 'store']);
+    Route::post('/overtimes/calculate', [\App\Http\Controllers\Api\OvertimeController::class, 'calculate']);
     
     Route::post('/attendances/clock-in', [\App\Http\Controllers\Api\AttendanceController::class, 'clockIn'])->middleware('throttle:attendance');
     Route::post('/attendances/clock-out', [\App\Http\Controllers\Api\AttendanceController::class, 'clockOut'])->middleware('throttle:attendance');

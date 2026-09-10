@@ -144,15 +144,22 @@ class PayrollController extends Controller
                 
                 $totalAllowance += $reimbursements;
 
-                // Ambil uang lembur (Overtime) - rate Depnaker = Gaji Pokok / 173
-                $overtimes = Overtime::where('employee_id', $emp->id)
+                // Ambil uang lembur (Overtime) - Sesuai PP 35/2021 & Kepmenakertrans 102/2004
+                $approvedOvertimes = Overtime::where('employee_id', $emp->id)
                     ->where('status', 'approved')
                     ->whereMonth('date', $month)
                     ->whereYear('date', $year)
-                    ->sum('duration_hours');
+                    ->get();
                 
-                $overtimeRate = round($basicSalary / 173);
-                $overtimePay = $overtimes * $overtimeRate;
+                $overtimeActualHours = (float) $approvedOvertimes->sum('duration_hours');
+                $overtimeMultiplierHours = (float) $approvedOvertimes->sum('multiplier_hours');
+                $overtimePay = (float) $approvedOvertimes->sum('total_pay');
+
+                // Fallback jika data lembur lama belum memiliki total_pay
+                if ($overtimePay == 0 && $overtimeActualHours > 0) {
+                    $overtimeRate = round($basicSalary / 173);
+                    $overtimePay = $overtimeActualHours * $overtimeRate;
+                }
                 $totalAllowance += $overtimePay;
 
                 // Tunjangan Kehadiran (Transportasi & Makan)
@@ -275,6 +282,8 @@ class PayrollController extends Controller
                             'meal' => $tunjanganMakan,
                             'reimbursement' => $reimbursements,
                             'overtime' => $overtimePay,
+                            'overtime_hours' => $overtimeActualHours,
+                            'overtime_multiplier_hours' => $overtimeMultiplierHours,
                         ],
                         'benefits' => [
                             'bpjs_tk_jht' => $bpjsTkJhtCompany,

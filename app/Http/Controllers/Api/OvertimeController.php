@@ -54,6 +54,41 @@ class OvertimeController extends Controller
         ]);
     }
 
+    public function calculate(Request $request)
+    {
+        $request->validate([
+            'date' => 'required|date',
+            'start_time' => 'required',
+            'end_time' => 'required',
+            'day_type' => 'nullable|in:workday,holiday',
+            'employee_id' => 'nullable|exists:employees,id',
+        ]);
+
+        $user = Auth::user();
+        $employee = null;
+        if ($user->role === 'employee') {
+            $employee = $user->employee;
+        } elseif ($request->filled('employee_id')) {
+            $employee = \App\Models\Employee::find($request->employee_id);
+        } else {
+            $employee = $user->employee;
+        }
+
+        $start = Carbon::parse($request->start_time);
+        $end = Carbon::parse($request->end_time);
+        if ($end->lt($start)) {
+            $end->addDay();
+        }
+        $durationHours = max(0.5, round(abs($start->diffInMinutes($end)) / 60, 2));
+
+        $calculation = Overtime::calculateDepnaker($employee, $request->date, $durationHours, $request->day_type);
+
+        return response()->json([
+            'success' => true,
+            'data' => $calculation,
+        ]);
+    }
+
     public function store(OvertimeRequest $request)
     {
         $employee = Auth::user()->employee;
@@ -66,9 +101,12 @@ class OvertimeController extends Controller
         if ($end->lt($start)) {
             $end->addDay();
         }
-        $durationHours = max(0.5, round($end->diffInMinutes($start) / 60, 2));
+        $durationHours = max(0.5, round(abs($start->diffInMinutes($end)) / 60, 2));
 
-        return DB::transaction(function () use ($request, $employee, $durationHours) {
+        // Hitung perhitungan lembur resmi Depnaker PP 35/2021
+        $calc = Overtime::calculateDepnaker($employee, $request->date, $durationHours, $request->day_type);
+
+        return DB::transaction(function () use ($request, $employee, $durationHours, $calc) {
             $status = 'pending_hr';
             if ($employee->manager_id) {
                 $status = 'pending_manager';
@@ -90,6 +128,11 @@ class OvertimeController extends Controller
                 'start_time' => $request->start_time,
                 'end_time' => $request->end_time,
                 'duration_hours' => $durationHours,
+                'day_type' => $calc['day_type'],
+                'hourly_rate' => $calc['hourly_rate'],
+                'multiplier_hours' => $calc['multiplier_hours'],
+                'total_pay' => $calc['total_pay'],
+                'breakdown' => $calc['breakdown'],
                 'reason' => $request->reason,
                 'status' => $status
             ]);
@@ -99,13 +142,15 @@ class OvertimeController extends Controller
                 'name' => $employee->user->name,
                 'date' => $request->date,
                 'duration_hours' => $durationHours,
+                'day_type' => $calc['day_type'],
+                'total_pay' => $calc['total_pay'],
                 'status' => $status,
             ]);
 
             $this->notifyManagerOrHR(
                 $employee,
                 'Pengajuan Lembur Baru',
-                "{$employee->user->name} telah mengajukan lembur.",
+                "{$employee->user->name} telah mengajukan lembur ({$calc['day_type']}, {$durationHours} jam).",
                 '/overtimes'
             );
 

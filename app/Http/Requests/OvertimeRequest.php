@@ -18,6 +18,7 @@ class OvertimeRequest extends FormRequest
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i',
             'reason' => 'required|string|max:1000',
+            'day_type' => 'nullable|in:workday,holiday',
         ];
     }
 
