@@ -18,6 +18,7 @@ class Employee extends Model
         'employee_code',
         'basic_salary',
         'join_date',
+        'birth_date',
         'contract_end_date',
         'job_title',
         'employment_status',

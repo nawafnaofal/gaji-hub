@@ -343,36 +343,43 @@ class DashboardController extends Controller
             });
 
         // 3. Birthdays in next 14 days
-        $now = \Carbon\Carbon::now();
-        $upcomingBirthdays = \App\Models\Employee::with('user')
-            ->whereNotNull('birth_date')
-            ->get()
-            ->filter(function ($emp) use ($now) {
-                if (!$emp->birth_date) return false;
-                try {
-                    $bday = \Carbon\Carbon::parse($emp->birth_date)->year($now->year);
-                    if ($bday->isPast() && $bday->diffInDays($now) > 1) {
-                        $bday->addYear();
-                    }
-                    $diff = (int) $now->diffInDays($bday, false);
-                    return $diff >= 0 && $diff <= 14;
-                } catch (\Exception $e) {
-                    return false;
-                }
-            })
-            ->map(function ($emp) use ($now) {
-                $bday = \Carbon\Carbon::parse($emp->birth_date)->year($now->year);
-                return [
-                    'id' => $emp->id,
-                    'name' => $emp->user->name ?? 'Karyawan',
-                    'department' => $emp->department_id ?? '-',
-                    'avatar' => $emp->profile_photo ? asset('storage/' . $emp->profile_photo) : null,
-                    'date' => \Carbon\Carbon::parse($emp->birth_date)->format('d M'),
-                    'days_left' => (int) $now->diffInDays($bday, false),
-                ];
-            })
-            ->sortBy('days_left')
-            ->values();
+        $upcomingBirthdays = collect();
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasColumn('employees', 'birth_date')) {
+                $now = \Carbon\Carbon::now();
+                $upcomingBirthdays = \App\Models\Employee::with('user')
+                    ->whereNotNull('birth_date')
+                    ->get()
+                    ->filter(function ($emp) use ($now) {
+                        if (!$emp->birth_date) return false;
+                        try {
+                            $bday = \Carbon\Carbon::parse($emp->birth_date)->year($now->year);
+                            if ($bday->isPast() && $bday->diffInDays($now) > 1) {
+                                $bday->addYear();
+                            }
+                            $diff = (int) $now->diffInDays($bday, false);
+                            return $diff >= 0 && $diff <= 14;
+                        } catch (\Exception $e) {
+                            return false;
+                        }
+                    })
+                    ->map(function ($emp) use ($now) {
+                        $bday = \Carbon\Carbon::parse($emp->birth_date)->year($now->year);
+                        return [
+                            'id' => $emp->id,
+                            'name' => $emp->user->name ?? 'Karyawan',
+                            'department' => $emp->department_id ?? '-',
+                            'avatar' => $emp->profile_photo ? asset('storage/' . $emp->profile_photo) : null,
+                            'date' => \Carbon\Carbon::parse($emp->birth_date)->format('d M'),
+                            'days_left' => (int) $now->diffInDays($bday, false),
+                        ];
+                    })
+                    ->sortBy('days_left')
+                    ->values();
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed loading upcoming birthdays: ' . $e->getMessage());
+        }
 
         // 4. Upcoming holidays
         $upcomingHolidays = \App\Models\Holiday::where('date', '>=', $today)
