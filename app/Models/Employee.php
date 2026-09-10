@@ -18,6 +18,7 @@ class Employee extends Model
         'employee_code',
         'basic_salary',
         'join_date',
+        'contract_end_date',
         'job_title',
         'employment_status',
         'bank_name',
@@ -94,6 +95,11 @@ class Employee extends Model
     public function branch()
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function contractCompensations()
+    {
+        return $this->hasMany(ContractCompensation::class);
     }
 
     public function getActivitylogOptions(): LogOptions

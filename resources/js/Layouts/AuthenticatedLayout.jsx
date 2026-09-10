@@ -164,6 +164,9 @@ export default function AuthenticatedLayout({ header, children }) {
                             <SidebarLink href={route('tax-reports')} active={route().current('tax-reports')} icon={FileSpreadsheet}>
                                 Pajak 1721-A1
                             </SidebarLink>
+                            <SidebarLink href={route('contract-compensations')} active={route().current('contract-compensations')} icon={FileText}>
+                                Kompensasi PKWT
+                            </SidebarLink>
                             <SidebarLink href={route('salary-components')} active={route().current('salary-components')} icon={Receipt}>
                                 Komponen Gaji
                             </SidebarLink>

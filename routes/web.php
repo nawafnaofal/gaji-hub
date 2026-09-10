@@ -78,6 +78,10 @@ Route::get('/company-documents', function () {
     return Inertia::render('CompanyDocument/Index');
 })->middleware(['auth', 'verified'])->name('company-documents');
 
+Route::get('/contract-compensations', function () {
+    return Inertia::render('ContractCompensation/Index');
+})->middleware(['auth', 'verified'])->name('contract-compensations');
+
 Route::get('/recruitment', function () {
     return Inertia::render('Recruitment/Index');
 })->middleware(['auth', 'verified', 'role:admin,hr'])->name('recruitment');
@@ -275,10 +279,20 @@ Route::middleware('auth')->prefix('api/v1')->group(function () {
         Route::get('/tax-reports', [\App\Http\Controllers\Api\TaxReportController::class, 'index']);
         Route::get('/tax-reports/{employee}/preview', [\App\Http\Controllers\Api\TaxReportController::class, 'preview'])->whereNumber('employee');
         Route::get('/tax-reports/{employee}/pdf', [\App\Http\Controllers\Api\TaxReportController::class, 'downloadPdf'])->whereNumber('employee');
+
+        // Contract Compensations (PKWT PP 35/2021) - Admin & HR
+        Route::get('/contract-compensations/expiring', [\App\Http\Controllers\Api\ContractCompensationController::class, 'expiringContracts']);
+        Route::post('/contract-compensations/generate', [\App\Http\Controllers\Api\ContractCompensationController::class, 'generate']);
+        Route::put('/contract-compensations/{id}/approve', [\App\Http\Controllers\Api\ContractCompensationController::class, 'approve']);
+        Route::put('/contract-compensations/{id}/pay', [\App\Http\Controllers\Api\ContractCompensationController::class, 'markPaid']);
     });
     
     // Shared API
     Route::middleware('auth')->group(function () {
+        // Contract Compensations (PKWT)
+        Route::get('/contract-compensations', [\App\Http\Controllers\Api\ContractCompensationController::class, 'index']);
+        Route::get('/contract-compensations/{id}/slip-pdf', [\App\Http\Controllers\Api\ContractCompensationController::class, 'downloadSlipPdf']);
+
         // Tax Report 1721-A1 (Self-Service)
         Route::get('/tax-reports/my', [\App\Http\Controllers\Api\TaxReportController::class, 'myTaxReport']);
         Route::get('/tax-reports/my/pdf', [\App\Http\Controllers\Api\TaxReportController::class, 'myTaxReportPdf']);
